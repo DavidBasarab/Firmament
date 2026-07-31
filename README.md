@@ -1,4 +1,4 @@
-# Nova — A Game Engine From Scratch (C# + OpenTK)
+# Firmament — A Game Engine From Scratch (C# + OpenTK)
 
 A hobby engine built one lesson at a time, ending in a 2D vector Asteroids and a 3D Asteroids.
 No Unity. No Godot. No engine framework. Just C#, OpenTK, and OpenGL calls I wrote myself.
@@ -82,11 +82,11 @@ Introduced gradually — don't create empty folders on day one.
 
 ```
 /src
-  /Nova.Core          # math, timing, input, logging, resources
-  /Nova.Rendering     # GL wrappers, shaders, buffers, renderers
-  /Nova.Engine        # game loop, scene, entities, components
-  /Nova.Asteroids2D   # game 1
-  /Nova.Asteroids3D   # game 2
+  /Firmament.Core          # math, timing, input, logging, resources
+  /Firmament.Rendering     # GL wrappers, shaders, buffers, renderers
+  /Firmament.Engine        # game loop, scene, entities, components
+  /Firmament.Asteroids2D   # game 1
+  /Firmament.Asteroids3D   # game 2
 /assets
   /shaders /textures /models /audio /fonts
   CREDITS.md

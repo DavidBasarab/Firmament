@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Firmament.Core/Firmament.Core.csproj" />
+  <Project Path="Firmament.Game/Firmament.Game.csproj" />
+</Solution>

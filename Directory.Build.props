@@ -1,0 +1,7 @@
+﻿<Project>
+    <!-- Enable RID graph resolution so version-specific and distro-specific RID assets (e.g., centos-x64) can resolve in .NET 8+ -->
+    <ItemGroup>
+        <RuntimeHostConfigurationOption Include="System.Runtime.Loader.UseRidGraph" Value="true"/>
+    </ItemGroup>
+</Project>
+
