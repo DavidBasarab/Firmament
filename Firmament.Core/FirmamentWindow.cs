@@ -1,28 +1,129 @@
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Desktop;
+using System.Runtime.CompilerServices;
+using Silk.NET.Core.Native;
+using Silk.NET.Direct3D11;
+using Silk.NET.DXGI;
+using Silk.NET.Maths;
+using Silk.NET.Windowing;
 
 namespace Firmament.Core;
 
-public class FirmamentWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
-	: GameWindow(gameWindowSettings, nativeWindowSettings)
+public unsafe class FirmamentWindow : IDisposable
 {
 	private const double ReportIntervalSeconds = 1.0;
 
+	private readonly IWindow window;
+	private D3D11 d3d11;
+	private ComPtr<ID3D11Device> device;
+	private ComPtr<ID3D11DeviceContext> deviceContext;
+
+	private DXGI dxgi;
 	private double peakRenderSeconds;
-	private int rendersSinceLastReport;
+	private ComPtr<ID3D11RenderTargetView> renderTargetView;
+	private double rendersSinceLastReport;
+
 	private double secondsSinceLastReport;
+	private ComPtr<IDXGISwapChain1> swapChain;
 	private int updatesSinceLastReport;
 
-	protected override void OnRenderFrame(FrameEventArgs args)
+	public FirmamentWindow(int width, int height, string title)
 	{
-		base.OnRenderFrame(args);
+		var options = WindowOptions.Default with
+		{
+			API = GraphicsAPI.None,
+			Size = new Vector2D<int>(width, height),
+			Title = title,
+		};
 
-		secondsSinceLastReport += args.Time;
+		window = Window.Create(options);
+
+		window.Load += OnLoad;
+		window.Update += OnUpdate;
+		window.Render += OnRender;
+	}
+
+	public void Dispose()
+	{
+		renderTargetView.Dispose();
+		swapChain.Dispose();
+		deviceContext.Dispose();
+		device.Dispose();
+		window.Dispose();
+	}
+
+	public void Run()
+	{
+		window.Run();
+	}
+
+	private void OnLoad()
+	{
+		dxgi = DXGI.GetApi(window);
+		d3d11 = D3D11.GetApi(window);
+
+		SilkMarshal.ThrowHResult(
+			d3d11.CreateDevice(
+				default(ComPtr<IDXGIAdapter>),
+				D3DDriverType.Hardware,
+				0,
+				(uint)CreateDeviceFlag.None,
+				null,
+				0,
+				D3D11.SdkVersion,
+				ref device,
+				null,
+				ref deviceContext
+			)
+		);
+
+		var swapChainDesc = new SwapChainDesc1
+		{
+			BufferCount = 2,
+			Format = Format.FormatB8G8R8A8Unorm,
+			BufferUsage = DXGI.UsageRenderTargetOutput,
+			SwapEffect = SwapEffect.FlipDiscard,
+			SampleDesc = new SampleDesc(1, 0),
+		};
+
+		ComPtr<IDXGIFactory2> factory = default;
+
+		SilkMarshal.ThrowHResult(dxgi.CreateDXGIFactory2(0, out factory));
+
+		SilkMarshal.ThrowHResult(
+			factory.CreateSwapChainForHwnd(
+				device,
+				window.Native.DXHandle.Value,
+				in swapChainDesc,
+				null,
+				ref Unsafe.NullRef<IDXGIOutput>(),
+				ref swapChain
+			)
+		);
+
+		factory.Dispose();
+
+		ComPtr<ID3D11Texture2D> backBuffer = default;
+
+		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out backBuffer));
+
+		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
+		backBuffer.Dispose();
+	}
+
+	private void OnRender(double delta)
+	{
+		float[] clearColor = [0.1f, 0.3f, 0.3f, 1.0f];
+
+		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
+		deviceContext.ClearRenderTargetView(renderTargetView, ref clearColor[0]);
+
+		swapChain.Present(0, 0);
+
+		secondsSinceLastReport += delta;
 		rendersSinceLastReport++;
 
-		if (args.Time > peakRenderSeconds)
+		if (delta > peakRenderSeconds)
 		{
-			peakRenderSeconds = args.Time;
+			peakRenderSeconds = delta;
 		}
 
 		if (secondsSinceLastReport < ReportIntervalSeconds)
@@ -34,21 +135,19 @@ public class FirmamentWindow(GameWindowSettings gameWindowSettings, NativeWindow
 		ResetWindow();
 	}
 
-	protected override void OnUpdateFrame(FrameEventArgs args)
+	private void OnUpdate(double delta)
 	{
-		base.OnUpdateFrame(args);
-
 		updatesSinceLastReport++;
 	}
 
 	private void ReportPerformance()
 	{
 		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
-		var avgMilliSeconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
+		var avgMilliseconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
 
-		Title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliSeconds} ms avg | {peakMilliseconds} ms peak | {updatesSinceLastReport} updates | {avgMilliSeconds / 16.67 * 100:F3} % of 60Hz";
+		window.Title =
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates";
 	}
 
 	private void ResetWindow()
