@@ -1,4 +1,6 @@
+using System.Drawing;
 using System.Runtime.CompilerServices;
+using Firmament.Core.Extensions;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
@@ -11,12 +13,31 @@ public unsafe class FirmamentWindow : IDisposable
 {
 	private const double ReportIntervalSeconds = 1.0;
 
+	private readonly List<Color> colors =
+	[
+		Color.BlueViolet,
+		Color.Crimson,
+		Color.DarkOrange,
+		Color.DeepSkyBlue,
+		Color.ForestGreen,
+		Color.Gold,
+		Color.HotPink,
+		Color.Indigo,
+		Color.LimeGreen,
+		Color.MediumOrchid,
+	];
+
 	private readonly IWindow window;
+
+	private int colorIndex;
+
 	private D3D11 d3d11;
 	private ComPtr<ID3D11Device> device;
 	private ComPtr<ID3D11DeviceContext> deviceContext;
 
 	private DXGI dxgi;
+
+	private double elapsed;
 	private double peakRenderSeconds;
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
@@ -111,7 +132,9 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnRender(double delta)
 	{
-		float[] clearColor = [0.1f, 0.3f, 0.3f, 1.0f];
+		elapsed += delta;
+
+		var clearColor = colors[colorIndex].ToArray();
 
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
 		deviceContext.ClearRenderTargetView(renderTargetView, ref clearColor[0]);
@@ -130,6 +153,8 @@ public unsafe class FirmamentWindow : IDisposable
 		{
 			return;
 		}
+
+		colorIndex = (colorIndex + 1) % colors.Count;
 
 		ReportPerformance();
 		ResetWindow();
