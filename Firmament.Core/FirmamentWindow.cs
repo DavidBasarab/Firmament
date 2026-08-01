@@ -154,10 +154,15 @@ public unsafe class FirmamentWindow : IDisposable
 			return;
 		}
 
-		colorIndex = (colorIndex + 1) % colors.Count;
+		colorIndex = GetNextColorIndex();
 
 		ReportPerformance();
 		ResetWindow();
+	}
+
+	private int GetNextColorIndex()
+	{
+		return (colorIndex + 1) % colors.Count;
 	}
 
 	private void OnUpdate(double delta)
