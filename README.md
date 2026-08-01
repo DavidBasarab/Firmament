@@ -114,9 +114,9 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 
 - [x] **1.1** Solution setup, OpenTK via NuGet, `GameWindow`, a window that opens and closes
 - [x] **1.2** The game loop: `OnUpdateFrame` vs `OnRenderFrame`, what delta time actually is
-- [ ] **1.3** FPS: frame counter, rolling average, frame-time in ms (ms is the honest number, FPS is the vanity number) — display in the title bar
-- [ ] **1.4** `GL.ClearColor` / `GL.Clear`, the color buffer, why you clear at all
-- [ ] **1.5** Animating the clear color over time — proof the loop is alive
+- [x] **1.3** FPS: frame counter, rolling average, frame-time in ms (ms is the honest number, FPS is the vanity number) — display in the title bar
+- [x] **1.4** `GL.ClearColor` / `GL.Clear`, the color buffer, why you clear at all *(last OpenGL lesson — superseded by the 1.5 pivot)*
+- [ ] **1.5** 🔀 **Pivot to DirectX 11 (Silk.NET):** swap the OpenTK/OpenGL foundation for a D3D11 device + swap chain, keep the same game loop (animating the clear color proves it's alive)
 - [ ] **1.6** Keyboard input basics: ESC to quit, `KeyboardState` snapshot vs event
 - [ ] **1.7** Window resize, viewport, aspect ratio, and what happens if you ignore it
 - [ ] **1.8** VSync, tearing, and why your FPS counter says 60 no matter what you do
@@ -326,9 +326,13 @@ to want from an engine you built yourself. **Prerequisites: 8.6 (quaternions), 8
 
 Each lesson links to its authored file. Check it off when you've worked through it; jot notes inline after the link if you want.
 
+> **🔀 Foundation pivot (as of 1.5):** the engine moves off **OpenTK / OpenGL** onto **DirectX 11 via Silk.NET** — Windows-only, by choice. Lessons 1.1–1.4 stand as the OpenGL foundation; from 1.5 on, the rendering stack is D3D11. Parts 2–13 are still OpenGL-worded and will be re-scoped to D3D11 as a separate pass.
+
 - [x] [1.1 — A Window and a GL Context](lessons/1.1-a-window-and-a-gl-context.md)
 - [x] [1.2 — The Game Loop and Delta Time](lessons/1.2-the-game-loop-and-delta-time.md)
-- [ ] [1.3 — FPS, Frame Time, and the Title Bar](lessons/1.3-fps-frame-time-and-the-title-bar.md)
+- [x] [1.3 — FPS, Frame Time, and the Title Bar](lessons/1.3-fps-frame-time-and-the-title-bar.md)
+- [x] [1.4 — `GL.ClearColor` / `GL.Clear` and the Color Buffer](lessons/1.4-clear-color-and-the-color-buffer.md)
+- [ ] [1.5 — 🔀 Pivot to DirectX 11 (Silk.NET)](lessons/1.5-pivot-to-directx-11-silk-net.md)
 
 ---
 
