@@ -113,7 +113,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 *Goal: a window that opens, closes cleanly, and honestly reports its own frame rate.*
 
 - [x] **1.1** Solution setup, OpenTK via NuGet, `GameWindow`, a window that opens and closes
-- [ ] **1.2** The game loop: `OnUpdateFrame` vs `OnRenderFrame`, what delta time actually is
+- [x] **1.2** The game loop: `OnUpdateFrame` vs `OnRenderFrame`, what delta time actually is
 - [ ] **1.3** FPS: frame counter, rolling average, frame-time in ms (ms is the honest number, FPS is the vanity number) — display in the title bar
 - [ ] **1.4** `GL.ClearColor` / `GL.Clear`, the color buffer, why you clear at all
 - [ ] **1.5** Animating the clear color over time — proof the loop is alive
@@ -327,7 +327,8 @@ to want from an engine you built yourself. **Prerequisites: 8.6 (quaternions), 8
 Each lesson links to its authored file. Check it off when you've worked through it; jot notes inline after the link if you want.
 
 - [x] [1.1 — A Window and a GL Context](lessons/1.1-a-window-and-a-gl-context.md)
-- [ ] [1.2 — The Game Loop and Delta Time](lessons/1.2-the-game-loop-and-delta-time.md)
+- [x] [1.2 — The Game Loop and Delta Time](lessons/1.2-the-game-loop-and-delta-time.md)
+- [ ] [1.3 — FPS, Frame Time, and the Title Bar](lessons/1.3-fps-frame-time-and-the-title-bar.md)
 
 ---
 
