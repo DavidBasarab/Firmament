@@ -48,7 +48,7 @@ public class FirmamentWindow(GameWindowSettings gameWindowSettings, NativeWindow
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
 
 		Title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliSeconds} ms avg | {peakMilliseconds} ms peak | {updatesSinceLastReport} updates/s";
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliSeconds} ms avg | {peakMilliseconds} ms peak | {updatesSinceLastReport} updates | {avgMilliSeconds / 16.67 * 100:F3} % of 60Hz";
 	}
 
 	private void ResetWindow()
