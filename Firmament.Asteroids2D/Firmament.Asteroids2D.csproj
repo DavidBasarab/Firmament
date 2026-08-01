@@ -5,8 +5,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<LangVersion>default</LangVersion>
-		<RootNamespace>Firmament.Game</RootNamespace>
-		<AssemblyName>Firmament.Game</AssemblyName>
+		<RootNamespace>Firmament.Asteroids2D</RootNamespace>
+		<AssemblyName>Firmament.Asteroids2D</AssemblyName>
 		<PlatformTarget>x64</PlatformTarget>
 	</PropertyGroup>
 	<PropertyGroup>

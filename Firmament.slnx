@@ -1,4 +1,7 @@
 <Solution>
   <Project Path="Firmament.Core/Firmament.Core.csproj" />
-  <Project Path="Firmament.Game/Firmament.Game.csproj" />
+  <Project Path="Firmament.Rendering/Firmament.Rendering.csproj" />
+  <Project Path="Firmament.Engine/Firmament.Engine.csproj" />
+  <Project Path="Firmament.Asteroids2D/Firmament.Asteroids2D.csproj" />
+  <Project Path="Firmament.Asteroids3D/Firmament.Asteroids3D.csproj" />
 </Solution>

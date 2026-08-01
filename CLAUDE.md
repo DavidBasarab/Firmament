@@ -19,7 +19,7 @@ Where the README and the actual code disagree, **the code is authoritative** —
 ## Projects
 
 - `Firmament.Core` — the engine library (`Firmament.Core.*` namespaces). OpenTK / OpenGL lives here.
-- `Firmament.Game` — the console entry point that runs the engine (`Firmament.Game.*` namespaces).
+- `Firmament.Asteroids2D` — the console entry point that runs the engine (`Firmament.Asteroids2D.*` namespaces).
 - `Firmament.slnx` — the solution.
 
 All production namespaces start with `Firmament.*`.

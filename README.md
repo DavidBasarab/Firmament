@@ -59,7 +59,7 @@ written raw OpenGL and my linear algebra is rusty.
    - 📎 **What this unlocks** — one line on why the next lesson needs this
 6. **Assume I tweaked things.** I learn by messing with the code. When I come back for the next
    lesson, read the actual files in the repo first — don't assume my code matches what you gave me.
-7. **Idiomatic modern C#.** File-scoped namespaces, nullable reference types on, `readonly struct`
+7. **Idiomatic modern C#.** File-scoped namespaces, nullable reference types **off**, `readonly struct`
    where it matters, spans where they earn their keep. Treat me as a peer on language choices;
    argue with me if I pick something dumb.
 8. **No mystery numbers.** Every magic constant, GL enum, and buffer offset gets a one-line reason.
@@ -69,7 +69,7 @@ written raw OpenGL and my linear algebra is rusty.
 
 **Tech constraints:**
 - .NET 8+ (or newer LTS), C# latest
-- OpenTK 4.x, OpenGL 3.3 core profile minimum (bump to 4.3+ only when a lesson explicitly needs it, e.g. debug output, compute)
+- OpenTK 4.x, OpenGL 4.6 core profile — we target 4.6 and don't care about older versions
 - Cross-platform-friendly: no Windows-only APIs
 - Zero paid assets. CC0 / public domain only (Kenney.nl, OpenGameArt, freesound, Poly Haven). Note the license in `assets/CREDITS.md` as we go.
 - No engine dependency creep. Allowed third-party: OpenTK, StbImageSharp (or ImageSharp), ImGui.NET (Part 11 only). Anything else needs a justification.

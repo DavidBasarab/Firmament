@@ -60,7 +60,7 @@ else if (attribute == VertexAttribute.Color) stride = 4;
 - When a class directly implements a single interface, the interface and class live in the same file — named after the class. Do not create a separate file for the interface.
 - Only create a standalone interface file when the interface has multiple implementations or is consumed without a single obvious implementation.
 - Namespace must exactly match the folder path within the project. No exceptions.
-- All production namespaces start with `Firmament.*` — engine code under `Firmament.Core.*` (e.g. `Firmament.Core.Rendering`, `Firmament.Core.Math`), the runnable app under `Firmament.Game.*`.
+- All production namespaces start with `Firmament.*` — engine code under `Firmament.Core.*` (e.g. `Firmament.Core.Rendering`, `Firmament.Core.Math`), the runnable app under `Firmament.Asteroids2D.*`.
 - Always use file-scoped namespaces (C# 10+). Never use block-style `namespace X { }`.
 
 ```csharp

@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 
-namespace Firmament.Game;
+namespace Firmament.Asteroids2D;
 
 public static class Program
 {
