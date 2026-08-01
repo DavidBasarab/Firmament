@@ -6,53 +6,56 @@ namespace Firmament.Core;
 public class FirmamentWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
 	: GameWindow(gameWindowSettings, nativeWindowSettings)
 {
-	private DateTime lastUpdateTime;
+	private const double ReportIntervalSeconds = 1.0;
+
+	private double peakRenderSeconds;
 	private int rendersSinceLastReport;
-	private TimeSpan runTime;
 	private double secondsSinceLastReport;
-	private TimeSpan updateAverage;
-	private TimeSpan updateDelta;
 	private int updatesSinceLastReport;
-
-	protected override void OnUpdateFrame(FrameEventArgs args)
-	{
-		base.OnUpdateFrame(args);
-
-		GetUpdateData(args);
-		PrintUpdates();
-	}
-
-	private void GetUpdateData(FrameEventArgs args)
-	{
-		secondsSinceLastReport += args.Time;
-		runTime += TimeSpan.FromSeconds(args.Time);
-		updatesSinceLastReport++;
-		updateDelta = DateTime.Now - lastUpdateTime;
-		lastUpdateTime = DateTime.Now;
-
-		updateAverage = (updateAverage * (updatesSinceLastReport - 1) + updateDelta) / updatesSinceLastReport;
-	}
-
-	private void PrintUpdates()
-	{
-		if (secondsSinceLastReport < 1.0)
-		{
-			return;
-		}
-
-		Console.WriteLine(
-			$"Updates per second: {updatesSinceLastReport}, Renders per second: {rendersSinceLastReport}, Run time: {runTime} | Update delta: {updateDelta}, Update average: {updateAverage}"
-		);
-
-		secondsSinceLastReport = 0.0;
-		updatesSinceLastReport = 0;
-		rendersSinceLastReport = 0;
-	}
 
 	protected override void OnRenderFrame(FrameEventArgs args)
 	{
 		base.OnRenderFrame(args);
 
+		secondsSinceLastReport += args.Time;
 		rendersSinceLastReport++;
+
+		if (args.Time > peakRenderSeconds)
+		{
+			peakRenderSeconds = args.Time;
+		}
+
+		if (secondsSinceLastReport < ReportIntervalSeconds)
+		{
+			return;
+		}
+
+		ReportPerformance();
+		ResetWindow();
+	}
+
+	protected override void OnUpdateFrame(FrameEventArgs args)
+	{
+		base.OnUpdateFrame(args);
+
+		updatesSinceLastReport++;
+	}
+
+	private void ReportPerformance()
+	{
+		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
+		var avgMilliSeconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
+		var peakMilliseconds = peakRenderSeconds * 1000.0;
+
+		Title =
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliSeconds} ms avg | {peakMilliseconds} ms peak | {updatesSinceLastReport} updates/s";
+	}
+
+	private void ResetWindow()
+	{
+		secondsSinceLastReport = 0.0;
+		updatesSinceLastReport = 0;
+		rendersSinceLastReport = 0;
+		peakRenderSeconds = 0.0;
 	}
 }
