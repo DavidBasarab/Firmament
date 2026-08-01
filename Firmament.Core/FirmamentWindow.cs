@@ -11,6 +11,7 @@ namespace Firmament.Core;
 
 public unsafe class FirmamentWindow : IDisposable
 {
+	private const double ColorTransitionSeconds = 5.0;
 	private const double ReportIntervalSeconds = 1.0;
 
 	private readonly List<Color> colors =
@@ -30,6 +31,9 @@ public unsafe class FirmamentWindow : IDisposable
 	private readonly IWindow window;
 
 	private int colorIndex;
+	private double colorTransitionProgress;
+
+	private float[] currentClearColor;
 
 	private D3D11 d3d11;
 	private ComPtr<ID3D11Device> device;
@@ -43,7 +47,9 @@ public unsafe class FirmamentWindow : IDisposable
 	private double rendersSinceLastReport;
 
 	private double secondsSinceLastReport;
+	private float[] startColor;
 	private ComPtr<IDXGISwapChain1> swapChain;
+	private float[] targetColor;
 	private int updatesSinceLastReport;
 
 	public FirmamentWindow(int width, int height, string title)
@@ -74,6 +80,49 @@ public unsafe class FirmamentWindow : IDisposable
 	public void Run()
 	{
 		window.Run();
+	}
+
+	private void AdvanceColorTransition(double delta)
+	{
+		colorTransitionProgress += delta / ColorTransitionSeconds;
+
+		while (colorTransitionProgress >= 1.0)
+		{
+			colorTransitionProgress -= 1.0;
+			MoveToNextColor();
+		}
+
+		InterpolateClearColor();
+	}
+
+	private int GetNextColorIndex()
+	{
+		return (colorIndex + 1) % colors.Count;
+	}
+
+	private void InitializeColorTransition()
+	{
+		startColor = colors[colorIndex].ToArray();
+		targetColor = colors[GetNextColorIndex()].ToArray();
+		currentClearColor = [0f, 0f, 0f, 0f];
+		colorTransitionProgress = 0.0;
+	}
+
+	private void InterpolateClearColor()
+	{
+		var t = (float)colorTransitionProgress;
+
+		for (var channel = 0; channel < currentClearColor.Length; channel++)
+		{
+			currentClearColor[channel] = startColor[channel] + (targetColor[channel] - startColor[channel]) * t;
+		}
+	}
+
+	private void MoveToNextColor()
+	{
+		colorIndex = GetNextColorIndex();
+		startColor = targetColor;
+		targetColor = colors[GetNextColorIndex()].ToArray();
 	}
 
 	private void OnLoad()
@@ -134,10 +183,15 @@ public unsafe class FirmamentWindow : IDisposable
 	{
 		elapsed += delta;
 
-		var clearColor = colors[colorIndex].ToArray();
+		if (currentClearColor is null)
+		{
+			InitializeColorTransition();
+		}
+
+		AdvanceColorTransition(delta);
 
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
-		deviceContext.ClearRenderTargetView(renderTargetView, ref clearColor[0]);
+		deviceContext.ClearRenderTargetView(renderTargetView, ref currentClearColor[0]);
 
 		swapChain.Present(0, 0);
 
@@ -154,15 +208,8 @@ public unsafe class FirmamentWindow : IDisposable
 			return;
 		}
 
-		colorIndex = GetNextColorIndex();
-
 		ReportPerformance();
 		ResetWindow();
-	}
-
-	private int GetNextColorIndex()
-	{
-		return (colorIndex + 1) % colors.Count;
 	}
 
 	private void OnUpdate(double delta)
