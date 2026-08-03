@@ -116,7 +116,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [x] **1.2** The game loop: `OnUpdateFrame` vs `OnRenderFrame`, what delta time actually is
 - [x] **1.3** FPS: frame counter, rolling average, frame-time in ms (ms is the honest number, FPS is the vanity number) — display in the title bar
 - [x] **1.4** `GL.ClearColor` / `GL.Clear`, the color buffer, why you clear at all *(last OpenGL lesson — superseded by the 1.5 pivot)*
-- [ ] **1.5** 🔀 **Pivot to DirectX 11 (Silk.NET):** swap the OpenTK/OpenGL foundation for a D3D11 device + swap chain, keep the same game loop (animating the clear color proves it's alive)
+- [x] **1.5** 🔀 **Pivot to DirectX 11 (Silk.NET):** swap the OpenTK/OpenGL foundation for a D3D11 device + swap chain, keep the same game loop (animating the clear color proves it's alive)
 - [ ] **1.6** Keyboard input basics: ESC to quit, `KeyboardState` snapshot vs event
 - [ ] **1.7** Window resize, viewport, aspect ratio, and what happens if you ignore it
 - [ ] **1.8** VSync, tearing, and why your FPS counter says 60 no matter what you do
@@ -332,7 +332,8 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [1.2 — The Game Loop and Delta Time](lessons/1.2-the-game-loop-and-delta-time.md)
 - [x] [1.3 — FPS, Frame Time, and the Title Bar](lessons/1.3-fps-frame-time-and-the-title-bar.md)
 - [x] [1.4 — `GL.ClearColor` / `GL.Clear` and the Color Buffer](lessons/1.4-clear-color-and-the-color-buffer.md)
-- [ ] [1.5 — 🔀 Pivot to DirectX 11 (Silk.NET)](lessons/1.5-pivot-to-directx-11-silk-net.md)
+- [x] [1.5 — 🔀 Pivot to DirectX 11 (Silk.NET)](lessons/1.5-pivot-to-directx-11-silk-net.md)
+- [ ] [1.6 — Keyboard Input and ESC to Quit](lessons/1.6-keyboard-input-and-esc-to-quit.md)
 
 ---
 
