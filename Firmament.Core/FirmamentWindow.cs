@@ -4,6 +4,7 @@ using Firmament.Core.Extensions;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
+using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
@@ -41,6 +42,9 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private DXGI dxgi;
 
+	private IInputContext input;
+	private IKeyboard keyboard;
+
 	private double peakRenderSeconds;
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
@@ -73,6 +77,7 @@ public unsafe class FirmamentWindow : IDisposable
 		swapChain.Dispose();
 		deviceContext.Dispose();
 		device.Dispose();
+		input.Dispose();
 		window.Dispose();
 	}
 
@@ -124,6 +129,14 @@ public unsafe class FirmamentWindow : IDisposable
 		targetColor = colors[GetNextColorIndex()].ToArray();
 	}
 
+	private void OnKeyDown(IKeyboard source, Key key, int scancode)
+	{
+		if (key == Key.Escape)
+		{
+			window.Close();
+		}
+	}
+
 	private void OnLoad()
 	{
 		dxgi = DXGI.GetApi(window);
@@ -171,7 +184,13 @@ public unsafe class FirmamentWindow : IDisposable
 		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
 
 		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
+
 		backBuffer.Dispose();
+
+		input = window.CreateInput();
+
+		keyboard = input.Keyboards.FirstOrDefault();
+		keyboard.KeyDown += OnKeyDown;
 	}
 
 	private void OnRender(double delta)
@@ -181,7 +200,10 @@ public unsafe class FirmamentWindow : IDisposable
 			InitializeColorTransition();
 		}
 
-		AdvanceColorTransition(delta);
+		if (!keyboard.IsKeyPressed(Key.Space))
+		{
+			AdvanceColorTransition(delta);
+		}
 
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
 		deviceContext.ClearRenderTargetView(renderTargetView, ref currentClearColor[0]);
