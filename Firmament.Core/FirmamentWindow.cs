@@ -41,7 +41,6 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private DXGI dxgi;
 
-	private double elapsed;
 	private double peakRenderSeconds;
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
@@ -154,9 +153,7 @@ public unsafe class FirmamentWindow : IDisposable
 			SampleDesc = new SampleDesc(1, 0),
 		};
 
-		ComPtr<IDXGIFactory2> factory = default;
-
-		SilkMarshal.ThrowHResult(dxgi.CreateDXGIFactory2(0, out factory));
+		SilkMarshal.ThrowHResult(dxgi.CreateDXGIFactory2(0, out ComPtr<IDXGIFactory2> factory));
 
 		SilkMarshal.ThrowHResult(
 			factory.CreateSwapChainForHwnd(
@@ -171,9 +168,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 		factory.Dispose();
 
-		ComPtr<ID3D11Texture2D> backBuffer = default;
-
-		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out backBuffer));
+		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
 
 		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
 		backBuffer.Dispose();
@@ -181,8 +176,6 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnRender(double delta)
 	{
-		elapsed += delta;
-
 		if (currentClearColor is null)
 		{
 			InitializeColorTransition();
