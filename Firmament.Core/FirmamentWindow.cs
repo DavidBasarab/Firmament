@@ -102,6 +102,26 @@ public unsafe class FirmamentWindow : IDisposable
 		InterpolateClearColor();
 	}
 
+	private void GetGamepad()
+	{
+		gamepad = input.Gamepads.FirstOrDefault();
+
+		if (gamepad != null)
+		{
+			gamepad.ButtonDown += OnGamepadButtonDown;
+		}
+	}
+
+	private void GetKeyboard()
+	{
+		keyboard = input.Keyboards.FirstOrDefault();
+
+		if (keyboard != null)
+		{
+			keyboard.KeyDown += OnKeyDown;
+		}
+	}
+
 	private int GetNextColorIndex()
 	{
 		return (colorIndex + 1) % colors.Count;
@@ -196,11 +216,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 		input = window.CreateInput();
 
-		keyboard = input.Keyboards.FirstOrDefault();
-		keyboard.KeyDown += OnKeyDown;
-
-		gamepad = input.Gamepads.FirstOrDefault();
-		gamepad.ButtonDown += OnGamepadButtonDown;
+		GetKeyboard();
+		GetGamepad();
 	}
 
 	private void OnRender(double delta)
