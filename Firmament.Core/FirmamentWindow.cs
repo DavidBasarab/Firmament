@@ -30,6 +30,9 @@ public unsafe class FirmamentWindow : IDisposable
 	];
 
 	private readonly IWindow window;
+	private uint backBufferHeight;
+
+	private uint backBufferWidth;
 
 	private int colorIndex;
 	private double colorTransitionProgress;
@@ -52,6 +55,8 @@ public unsafe class FirmamentWindow : IDisposable
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
 
+	private int resizeCount;
+
 	private double secondsSinceLastReport;
 	private float[] startColor;
 	private ComPtr<IDXGISwapChain1> swapChain;
@@ -72,6 +77,7 @@ public unsafe class FirmamentWindow : IDisposable
 		window.Load += OnLoad;
 		window.Update += OnUpdate;
 		window.Render += OnRender;
+		window.FramebufferResize += OnFrameBufferResize;
 	}
 
 	public void Dispose()
@@ -100,6 +106,13 @@ public unsafe class FirmamentWindow : IDisposable
 		}
 
 		InterpolateClearColor();
+	}
+
+	private void CreateRenderTargetView()
+	{
+		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
+		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
+		backBuffer.Dispose();
 	}
 
 	private void GetGamepad()
@@ -150,6 +163,18 @@ public unsafe class FirmamentWindow : IDisposable
 		colorIndex = GetNextColorIndex();
 		startColor = targetColor;
 		targetColor = colors[GetNextColorIndex()].ToArray();
+	}
+
+	private void OnFrameBufferResize(Vector2D<int> size)
+	{
+		if (size.X <= 0 || size.Y <= 0)
+		{
+			return;
+		}
+
+		resizeCount++;
+
+		ResizeSwapChain((uint)size.X, (uint)size.Y);
 	}
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
@@ -208,11 +233,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 		factory.Dispose();
 
-		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
-
-		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
-
-		backBuffer.Dispose();
+		CreateRenderTargetView();
+		SetViewPort((uint)window.FramebufferSize.X, (uint)window.FramebufferSize.Y);
 
 		input = window.CreateInput();
 
@@ -264,9 +286,10 @@ public unsafe class FirmamentWindow : IDisposable
 		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
 		var avgMilliseconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
+		var aspectRatio = (float)backBufferWidth / backBufferHeight;
 
 		window.Title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Pauses {pauseBackgroundSwitch}";
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1";
 	}
 
 	private void ResetWindow()
@@ -275,6 +298,20 @@ public unsafe class FirmamentWindow : IDisposable
 		updatesSinceLastReport = 0;
 		rendersSinceLastReport = 0;
 		peakRenderSeconds = 0.0;
+	}
+
+	private void ResizeSwapChain(uint width, uint height)
+	{
+		var noRenderTargets = default(ComPtr<ID3D11RenderTargetView>);
+
+		deviceContext.OMSetRenderTargets(0, ref noRenderTargets, (ComPtr<ID3D11DepthStencilView>)default);
+
+		renderTargetView.Dispose();
+
+		SilkMarshal.ThrowHResult(swapChain.ResizeBuffers(0, width, height, Format.FormatUnknown, 0));
+
+		CreateRenderTargetView();
+		SetViewPort(width, height);
 	}
 
 	private void RunActionForGamepadButtonDown(Button button, ButtonName expectName, Action action)
@@ -291,5 +328,23 @@ public unsafe class FirmamentWindow : IDisposable
 		{
 			action();
 		}
+	}
+
+	private void SetViewPort(uint width, uint height)
+	{
+		var viewport = new Viewport
+		{
+			TopLeftX = 0,
+			TopLeftY = 0,
+			Width = width,
+			Height = height,
+			MinDepth = 0.0f,
+			MaxDepth = 1.0f,
+		};
+
+		deviceContext.RSSetViewports(1, ref viewport);
+
+		backBufferHeight = height;
+		backBufferWidth = width;
 	}
 }
