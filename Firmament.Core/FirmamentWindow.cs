@@ -13,7 +13,7 @@ namespace Firmament.Core;
 public unsafe class FirmamentWindow : IDisposable
 {
 	private const double ColorTransitionSeconds = 5.0;
-	private const double ReportIntervalSeconds = 1.0;
+	private const double ReportIntervalSeconds = 0.1;
 
 	private readonly List<Color> colors =
 	[
@@ -41,6 +41,7 @@ public unsafe class FirmamentWindow : IDisposable
 	private ComPtr<ID3D11DeviceContext> deviceContext;
 
 	private DXGI dxgi;
+	private IGamepad gamepad;
 
 	private IInputContext input;
 	private IKeyboard keyboard;
@@ -131,6 +132,12 @@ public unsafe class FirmamentWindow : IDisposable
 		targetColor = colors[GetNextColorIndex()].ToArray();
 	}
 
+	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
+	{
+		RunActionForGamepadButtonDown(button, ButtonName.Start, () => window.Close());
+		RunActionForGamepadButtonDown(button, ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+	}
+
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
 		RunActionForKeyDown(key, Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
@@ -191,6 +198,9 @@ public unsafe class FirmamentWindow : IDisposable
 
 		keyboard = input.Keyboards.FirstOrDefault();
 		keyboard.KeyDown += OnKeyDown;
+
+		gamepad = input.Gamepads.FirstOrDefault();
+		gamepad.ButtonDown += OnGamepadButtonDown;
 	}
 
 	private void OnRender(double delta)
@@ -239,7 +249,7 @@ public unsafe class FirmamentWindow : IDisposable
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
 
 		window.Title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates";
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Pauses {pauseBackgroundSwitch}";
 	}
 
 	private void ResetWindow()
@@ -248,6 +258,14 @@ public unsafe class FirmamentWindow : IDisposable
 		updatesSinceLastReport = 0;
 		rendersSinceLastReport = 0;
 		peakRenderSeconds = 0.0;
+	}
+
+	private void RunActionForGamepadButtonDown(Button button, ButtonName expectName, Action action)
+	{
+		if (button.Name == expectName)
+		{
+			action();
+		}
 	}
 
 	private void RunActionForKeyDown(Key key, Key expectedValue, Action action)
