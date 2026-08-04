@@ -45,6 +45,8 @@ public unsafe class FirmamentWindow : IDisposable
 	private IInputContext input;
 	private IKeyboard keyboard;
 
+	private bool pauseBackgroundSwitch;
+
 	private double peakRenderSeconds;
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
@@ -131,10 +133,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
-		if (key == Key.Escape)
-		{
-			window.Close();
-		}
+		RunActionForKeyDown(key, Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		RunActionForKeyDown(key, Key.Escape, () => window.Close());
 	}
 
 	private void OnLoad()
@@ -200,7 +200,7 @@ public unsafe class FirmamentWindow : IDisposable
 			InitializeColorTransition();
 		}
 
-		if (!keyboard.IsKeyPressed(Key.Space))
+		if (!pauseBackgroundSwitch)
 		{
 			AdvanceColorTransition(delta);
 		}
@@ -248,5 +248,13 @@ public unsafe class FirmamentWindow : IDisposable
 		updatesSinceLastReport = 0;
 		rendersSinceLastReport = 0;
 		peakRenderSeconds = 0.0;
+	}
+
+	private void RunActionForKeyDown(Key key, Key expectedValue, Action action)
+	{
+		if (key == expectedValue)
+		{
+			action();
+		}
 	}
 }
