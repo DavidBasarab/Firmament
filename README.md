@@ -118,7 +118,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [x] **1.4** `GL.ClearColor` / `GL.Clear`, the color buffer, why you clear at all *(last OpenGL lesson — superseded by the 1.5 pivot)*
 - [x] **1.5** 🔀 **Pivot to DirectX 11 (Silk.NET):** swap the OpenTK/OpenGL foundation for a D3D11 device + swap chain, keep the same game loop (animating the clear color proves it's alive)
 - [x] **1.6** Keyboard input basics: ESC to quit, `KeyboardState` snapshot vs event
-- [ ] **1.7** Window resize, viewport, aspect ratio, and what happens if you ignore it
+- [x] **1.7** Window resize, viewport, aspect ratio, and what happens if you ignore it
 - [ ] **1.8** VSync, tearing, and why your FPS counter says 60 no matter what you do
 
 ## Part 2 — The Pipeline and the First Triangle
@@ -334,7 +334,8 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [1.4 — `GL.ClearColor` / `GL.Clear` and the Color Buffer](lessons/1.4-clear-color-and-the-color-buffer.md)
 - [x] [1.5 — 🔀 Pivot to DirectX 11 (Silk.NET)](lessons/1.5-pivot-to-directx-11-silk-net.md)
 - [x] [1.6 — Keyboard Input and ESC to Quit](lessons/1.6-keyboard-input-and-esc-to-quit.md)
-- [ ] [1.7 — Window Resize, the Viewport, and Aspect Ratio](lessons/1.7-window-resize-viewport-and-aspect-ratio.md)
+- [x] [1.7 — Window Resize, the Viewport, and Aspect Ratio](lessons/1.7-window-resize-viewport-and-aspect-ratio.md)
+- [ ] [1.8 — VSync, Tearing, and the Frame Rate Cap](lessons/1.8-vsync-tearing-and-the-frame-rate-cap.md)
 
 ---
 
