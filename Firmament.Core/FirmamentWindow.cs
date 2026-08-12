@@ -7,6 +7,7 @@ using Silk.NET.DXGI;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
+using Feature = Silk.NET.DXGI.Feature;
 
 namespace Firmament.Core;
 
@@ -30,36 +31,29 @@ public unsafe class FirmamentWindow : IDisposable
 	];
 
 	private readonly IWindow window;
+	private bool allowTearingSupported;
 	private uint backBufferHeight;
-
 	private uint backBufferWidth;
-
 	private int colorIndex;
 	private double colorTransitionProgress;
-
 	private float[] currentClearColor;
-
-	private D3D11 d3d11;
+	private D3D11 d3D11;
 	private ComPtr<ID3D11Device> device;
 	private ComPtr<ID3D11DeviceContext> deviceContext;
-
 	private DXGI dxgi;
 	private IGamepad gamepad;
-
 	private IInputContext input;
 	private IKeyboard keyboard;
-
 	private bool pauseBackgroundSwitch;
-
 	private double peakRenderSeconds;
+	private uint presentSyncInterval = 1;
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
-
 	private int resizeCount;
-
 	private double secondsSinceLastReport;
 	private float[] startColor;
 	private ComPtr<IDXGISwapChain1> swapChain;
+	private uint swapChainFlags;
 	private float[] targetColor;
 	private int updatesSinceLastReport;
 
@@ -115,6 +109,31 @@ public unsafe class FirmamentWindow : IDisposable
 		backBuffer.Dispose();
 	}
 
+	private void CyclePresentSyncInterval()
+	{
+		presentSyncInterval = presentSyncInterval switch
+		{
+			0 => 1,
+			1 => 2,
+			_ => 0,
+		};
+	}
+
+	private string DescribePresentMode()
+	{
+		if (presentSyncInterval > 0)
+		{
+			return $"vsync {presentSyncInterval}";
+		}
+
+		if (allowTearingSupported)
+		{
+			return "tearing";
+		}
+
+		return "no-sync";
+	}
+
 	private void GetGamepad()
 	{
 		gamepad = input.Gamepads.FirstOrDefault();
@@ -140,6 +159,16 @@ public unsafe class FirmamentWindow : IDisposable
 		return (colorIndex + 1) % colors.Count;
 	}
 
+	private uint GetPresentFlags()
+	{
+		if (presentSyncInterval == 0 && allowTearingSupported)
+		{
+			return DXGI.PresentAllowTearing;
+		}
+
+		return 0;
+	}
+
 	private void InitializeColorTransition()
 	{
 		startColor = colors[colorIndex].ToArray();
@@ -156,6 +185,22 @@ public unsafe class FirmamentWindow : IDisposable
 		{
 			currentClearColor[channel] = startColor[channel] + (targetColor[channel] - startColor[channel]) * t;
 		}
+	}
+
+	private bool IsTearingSupported(ComPtr<IDXGIFactory2> factory)
+	{
+		if (factory.QueryInterface(out ComPtr<IDXGIFactory5> factory5) < 0)
+		{
+			return false;
+		}
+
+		var allowTearing = 0;
+
+		var result = factory5.CheckFeatureSupport(Feature.PresentAllowTearing, ref allowTearing, sizeof(int));
+
+		factory5.Dispose();
+
+		return result >= 0 && allowTearing != 0;
 	}
 
 	private void MoveToNextColor()
@@ -185,17 +230,18 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
-		RunActionForKeyDown(key, Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-		RunActionForKeyDown(key, Key.Escape, () => window.Close());
+		key.RunActionForKeyDown(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		key.RunActionForKeyDown(Key.Escape, () => window.Close());
+		key.RunActionForKeyDown(Key.V, CyclePresentSyncInterval);
 	}
 
 	private void OnLoad()
 	{
 		dxgi = DXGI.GetApi(window);
-		d3d11 = D3D11.GetApi(window);
+		d3D11 = D3D11.GetApi(window);
 
 		SilkMarshal.ThrowHResult(
-			d3d11.CreateDevice(
+			d3D11.CreateDevice(
 				default(ComPtr<IDXGIAdapter>),
 				D3DDriverType.Hardware,
 				0,
@@ -209,6 +255,11 @@ public unsafe class FirmamentWindow : IDisposable
 			)
 		);
 
+		SilkMarshal.ThrowHResult(dxgi.CreateDXGIFactory2(0, out ComPtr<IDXGIFactory2> factory));
+
+		allowTearingSupported = IsTearingSupported(factory);
+		swapChainFlags = allowTearingSupported ? (uint)SwapChainFlag.AllowTearing : 0;
+
 		var swapChainDesc = new SwapChainDesc1
 		{
 			BufferCount = 2,
@@ -216,9 +267,8 @@ public unsafe class FirmamentWindow : IDisposable
 			BufferUsage = DXGI.UsageRenderTargetOutput,
 			SwapEffect = SwapEffect.FlipDiscard,
 			SampleDesc = new SampleDesc(1, 0),
+			Flags = swapChainFlags,
 		};
-
-		SilkMarshal.ThrowHResult(dxgi.CreateDXGIFactory2(0, out ComPtr<IDXGIFactory2> factory));
 
 		SilkMarshal.ThrowHResult(
 			factory.CreateSwapChainForHwnd(
@@ -257,7 +307,7 @@ public unsafe class FirmamentWindow : IDisposable
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
 		deviceContext.ClearRenderTargetView(renderTargetView, ref currentClearColor[0]);
 
-		swapChain.Present(0, 0);
+		SilkMarshal.ThrowHResult(swapChain.Present(presentSyncInterval, GetPresentFlags()));
 
 		secondsSinceLastReport += delta;
 		rendersSinceLastReport++;
@@ -289,7 +339,7 @@ public unsafe class FirmamentWindow : IDisposable
 		var aspectRatio = (float)backBufferWidth / backBufferHeight;
 
 		window.Title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1";
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
 	}
 
 	private void ResetWindow()
@@ -317,14 +367,6 @@ public unsafe class FirmamentWindow : IDisposable
 	private void RunActionForGamepadButtonDown(Button button, ButtonName expectName, Action action)
 	{
 		if (button.Name == expectName)
-		{
-			action();
-		}
-	}
-
-	private void RunActionForKeyDown(Key key, Key expectedValue, Action action)
-	{
-		if (key == expectedValue)
 		{
 			action();
 		}
