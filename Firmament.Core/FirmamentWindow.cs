@@ -224,15 +224,15 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
 	{
-		RunActionForGamepadButtonDown(button, ButtonName.Start, () => window.Close());
-		RunActionForGamepadButtonDown(button, ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		button.RunAction(ButtonName.Start, () => window.Close());
+		button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
 	}
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
-		key.RunActionForKeyDown(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-		key.RunActionForKeyDown(Key.Escape, () => window.Close());
-		key.RunActionForKeyDown(Key.V, CyclePresentSyncInterval);
+		key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		key.RunAction(Key.Escape, () => window.Close());
+		key.RunAction(Key.V, CyclePresentSyncInterval);
 	}
 
 	private void OnLoad()
@@ -362,14 +362,6 @@ public unsafe class FirmamentWindow : IDisposable
 
 		CreateRenderTargetView();
 		SetViewPort(width, height);
-	}
-
-	private void RunActionForGamepadButtonDown(Button button, ButtonName expectName, Action action)
-	{
-		if (button.Name == expectName)
-		{
-			action();
-		}
 	}
 
 	private void SetViewPort(uint width, uint height)
