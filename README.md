@@ -119,7 +119,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [x] **1.5** 🔀 **Pivot to DirectX 11 (Silk.NET):** swap the OpenTK/OpenGL foundation for a D3D11 device + swap chain, keep the same game loop (animating the clear color proves it's alive)
 - [x] **1.6** Keyboard input basics: ESC to quit, `KeyboardState` snapshot vs event
 - [x] **1.7** Window resize, viewport, aspect ratio, and what happens if you ignore it
-- [ ] **1.8** VSync, tearing, and why your FPS counter says 60 no matter what you do
+- [x] **1.8** VSync, tearing, and why your FPS counter says 60 no matter what you do
 
 ## Part 2 — The Pipeline and the First Triangle
 *Goal: understand every stage between a float array and a lit pixel.*
@@ -308,7 +308,7 @@ to want from an engine you built yourself. **Prerequisites: 8.6 (quaternions), 8
 
 ## Progress
 
-- [ ] Part 1 — Window and Heartbeat
+- [x] Part 1 — Window and Heartbeat
 - [ ] Part 2 — Pipeline and First Triangle
 - [ ] Part 3 — The Math
 - [ ] Part 4 — Engine Bones
@@ -335,7 +335,8 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [1.5 — 🔀 Pivot to DirectX 11 (Silk.NET)](lessons/1.5-pivot-to-directx-11-silk-net.md)
 - [x] [1.6 — Keyboard Input and ESC to Quit](lessons/1.6-keyboard-input-and-esc-to-quit.md)
 - [x] [1.7 — Window Resize, the Viewport, and Aspect Ratio](lessons/1.7-window-resize-viewport-and-aspect-ratio.md)
-- [ ] [1.8 — VSync, Tearing, and the Frame Rate Cap](lessons/1.8-vsync-tearing-and-the-frame-rate-cap.md)
+- [x] [1.8 — VSync, Tearing, and the Frame Rate Cap](lessons/1.8-vsync-tearing-and-the-frame-rate-cap.md)
+- [ ] [2.1 — The Graphics Pipeline, End to End](lessons/2.1-the-graphics-pipeline-end-to-end.md)
 
 ---
 

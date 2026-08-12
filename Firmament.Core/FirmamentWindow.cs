@@ -358,7 +358,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 		renderTargetView.Dispose();
 
-		SilkMarshal.ThrowHResult(swapChain.ResizeBuffers(0, width, height, Format.FormatUnknown, 0));
+		SilkMarshal.ThrowHResult(swapChain.ResizeBuffers(0, width, height, Format.FormatUnknown, swapChainFlags));
 
 		CreateRenderTargetView();
 		SetViewPort(width, height);
