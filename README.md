@@ -1,7 +1,11 @@
-# Firmament — A Game Engine From Scratch (C# + OpenTK)
+# Firmament — A Game Engine From Scratch (C# + Direct3D 11)
 
 A hobby engine built one lesson at a time, ending in a 2D vector Asteroids and a 3D Asteroids.
-No Unity. No Godot. No engine framework. Just C#, OpenTK, and OpenGL calls I wrote myself.
+No Unity. No Godot. No engine framework. Just C#, Silk.NET, and Direct3D 11 calls I wrote myself.
+
+> **🔀 Foundation pivot at lesson 1.5.** This started on OpenTK / OpenGL. Lessons 1.1–1.4 stand as
+> that foundation and are left as written. From **1.5** on, the rendering stack is **Direct3D 11 via
+> Silk.NET** — Windows-only, by choice. The rest of this curriculum is written in D3D11 terms.
 
 **Status:** see [Progress](#progress) at the bottom.
 
@@ -37,14 +41,14 @@ Other things I can say:
 
 I'm a Sr. Software Developer / CTO with 20+ years of C#. I do **not** need C# explained to me.
 I *do* need graphics pipeline concepts and vector/matrix math explained, because I've never
-written raw OpenGL and my linear algebra is rusty.
+written a raw graphics API and my linear algebra is rusty.
 
 **Teach like this:**
 
 1. **Stay in scope.** One lesson = one concept. Do not write ahead. Do not "helpfully" add the
    next three lessons' worth of abstraction. If the lesson is a colored triangle, I do not want
    a `MaterialSystem`.
-2. **Concept first, ~150–400 words.** What is this thing, why does OpenGL need it, what happens
+2. **Concept first, ~150–400 words.** What is this thing, why does D3D11 need it, what happens
    on the GPU. Plain language. Then the code.
 3. **I type the code.** Give me the code to write, but structured as *what to write and where*,
    not a finished repo dump. Small files, shown in full when they're new, as diffs when they're
@@ -61,40 +65,48 @@ written raw OpenGL and my linear algebra is rusty.
 6. **Assume I tweaked things.** I learn by messing with the code. When I come back for the next
    lesson, read the actual files in the repo first — don't assume my code matches what you gave me.
 7. **Idiomatic modern C#.** File-scoped namespaces, nullable reference types **off**, `readonly struct`
-   where it matters, spans where they earn their keep. Treat me as a peer on language choices;
-   argue with me if I pick something dumb.
-8. **No mystery numbers.** Every magic constant, GL enum, and buffer offset gets a one-line reason.
+   where it matters, spans where they earn their keep. `unsafe` and `ComPtr<T>` are a given here —
+   that's the price of a COM API. Treat me as a peer on language choices; argue with me if I pick
+   something dumb.
+8. **No mystery numbers.** Every magic constant, D3D/DXGI enum, HRESULT, and buffer offset/stride
+   gets a one-line reason.
 9. **Performance honesty.** When we do something the slow-but-clear way, say so and say which
    lesson fixes it.
 10. **Don't be a cheerleader.** If my design is going to hurt in lesson 20, say it now.
 
 **Tech constraints:**
-- .NET 8+ (or newer LTS), C# latest
-- OpenTK 4.x, OpenGL 4.6 core profile — we target 4.6 and don't care about older versions
-- Cross-platform-friendly: no Windows-only APIs
+- .NET 10, C# latest, `x64` only
+- Silk.NET 2.x — `Silk.NET.Windowing`, `Silk.NET.Direct3D11`, `Silk.NET.DXGI`, `Silk.NET.Input`, `Silk.NET.Maths`
+- Direct3D 11, feature level 11_0+, flip-model swap chain (`FlipDiscard`). We don't care about D3D9/D3D10 or feature level 10 fallbacks.
+- **Windows-only, deliberately.** Win32 APIs are fine. Cross-platform is explicitly not a goal — that was the OpenGL plan and it's gone.
 - Zero paid assets. CC0 / public domain only (Kenney.nl, OpenGameArt, freesound, Poly Haven). Note the license in `assets/CREDITS.md` as we go.
-- No engine dependency creep. Allowed third-party: OpenTK, StbImageSharp (or ImageSharp), ImGui.NET (Part 11 only). Anything else needs a justification.
+- No engine dependency creep. Allowed third-party: Silk.NET, StbImageSharp (or ImageSharp), ImGui.NET (Part 11 only). Anything else needs a justification.
 
 ---
 
-## Suggested repo layout
+## Repo layout
 
-Introduced gradually — don't create empty folders on day one.
+Projects are flat at the repo root — no `/src` folder. `Firmament.slnx` is the solution.
 
 ```
-/src
-  /Firmament.Core          # math, timing, input, logging, resources
-  /Firmament.Rendering     # GL wrappers, shaders, buffers, renderers
-  /Firmament.Engine        # game loop, scene, entities, components
-  /Firmament.Asteroids2D   # game 1
-  /Firmament.Asteroids3D   # game 2
-/assets
-  /shaders /textures /models /audio /fonts
-  CREDITS.md
-/docs
-  /lessons            # my notes per lesson
+Firmament.Core           # everything real lives here today: FirmamentWindow (Win32 window,
+                         #   D3D11 device/context, DXGI swap chain, RTV, input), extensions
+Firmament.Rendering      # placeholder — shaders, buffers, renderers land here in Part 5
+Firmament.Engine         # placeholder — game loop, scene, entities land here in Part 4
+Firmament.Asteroids2D    # game 1 — the runnable entry point today
+Firmament.Asteroids3D    # game 2 — stub until Part 10
+lessons/                 # the authored lesson docs, one file per lesson
+Directory.Build.props
+Firmament.slnx
 README.md
 ```
+
+Folders get introduced when a lesson needs them, not up front. `assets/` (with `CREDITS.md`) does
+not exist yet — it arrives with the first texture in 5.4.
+
+**Known drift to clean up as we go:** `Firmament.Rendering` and `Firmament.Engine` are empty shells,
+and `Firmament.Rendering` still carries an `OpenTK` package reference left over from before the 1.5
+pivot. Drop it when Part 5 actually puts code in that project.
 
 ---
 
@@ -124,17 +136,17 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 ## Part 2 — The Pipeline and the First Triangle
 *Goal: understand every stage between a float array and a lit pixel.*
 
-- [ ] **2.1** The graphics pipeline, end to end, no code — a mental model to hang everything else on
-- [ ] **2.2** Vertex Buffer Objects: getting floats onto the GPU
-- [ ] **2.3** Vertex Array Objects: telling the GPU what those floats *mean* (`VertexAttribPointer`)
-- [ ] **2.4** GLSL: your first vertex + fragment shader, in-line strings
-- [ ] **2.5** Compiling, linking, and actually reading the error log (do this now, thank yourself forever)
-- [ ] **2.6** `GL.DrawArrays` — the triangle appears
-- [ ] **2.7** A `Shader` class: load from file, dispose properly, cache uniform locations
+- [x] **2.1** The graphics pipeline, end to end, no code — a mental model to hang everything else on
+- [ ] **2.2** Vertex buffers: `ID3D11Buffer`, `CreateBuffer`, and getting floats onto the GPU
+- [ ] **2.3** Input layouts: telling the input assembler what those floats *mean* (`InputElementDesc`, stride, offset)
+- [ ] **2.4** HLSL: your first vertex + pixel shader, as in-line strings
+- [ ] **2.5** Compiling with `D3DCompile`, reading the error blob, and creating the shader objects (do this now, thank yourself forever)
+- [ ] **2.6** `Draw` — bind the pipeline, set the topology, and the triangle appears
+- [ ] **2.7** A `Shader` class: compile from file, hold the input layout, release COM objects properly
 - [ ] **2.8** Vertex colors and how the rasterizer interpolates between vertices
-- [ ] **2.9** Element Buffer Objects: drawing a quad with 4 vertices instead of 6
-- [ ] **2.10** `GL.GetError` wrappers, `KHR_debug` output, and an assert helper for GL calls
-- [ ] **2.11** Uniforms: pushing a color from C# into the shader, per-frame
+- [ ] **2.9** Index buffers: drawing a quad with 4 vertices instead of 6, and `DrawIndexed`
+- [ ] **2.10** The D3D11 debug layer and `ID3D11InfoQueue`: turn HRESULTs and silent state errors into something you can read
+- [ ] **2.11** Constant buffers: pushing a color from C# into the shader, per-frame (and the 16-byte alignment rule that will bite you)
 
 ## Part 3 — The Math You Actually Need
 *Goal: stop being scared of vectors. Only the parts games use.*
@@ -144,9 +156,9 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [ ] **3.3** Cross product: perpendiculars, winding order, and why it matters in 3D
 - [ ] **3.4** Matrices as coordinate-space transforms (not as grids of numbers)
 - [ ] **3.5** Translate / rotate / scale, and why multiplication order changes everything
-- [ ] **3.6** Orthographic projection: defining a 2D world in world units, not pixels
-- [ ] **3.7** The Model-View-Projection chain, uploaded as a `mat4` uniform
-- [ ] **3.8** OpenTK's `Vector2/3/4`, `Matrix4`, row-major gotchas, and when to hand-roll instead
+- [ ] **3.6** Orthographic projection: defining a 2D world in world units, not pixels — and D3D's `[0,1]` depth range (not OpenGL's `[-1,1]`)
+- [ ] **3.7** The Model-View-Projection chain, uploaded in a constant buffer as a `float4x4`
+- [ ] **3.8** `Silk.NET.Maths` `Vector2D/3D/4D` and `Matrix4X4`, row-major vs column-major, HLSL's default column-major packing, and when to hand-roll instead
 - [ ] **3.9** A 2D camera: pan, zoom, screen↔world coordinate conversion
 - [ ] **3.10** Angles, radians, `Atan2`, and rotating a ship toward a point
 - [ ] **3.11** Framerate-independent movement: why `position += velocity` without `dt` is a bug
@@ -156,23 +168,23 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 
 - [ ] **4.1** Splitting `Engine` from `Game`: what the engine owns vs what the game owns
 - [ ] **4.2** Fixed timestep with an accumulator, and render interpolation (the "Fix Your Timestep" lesson)
-- [ ] **4.3** GL object lifetimes: `IDisposable`, finalizer traps, and why GL handles can't be freed on a random thread
+- [ ] **4.3** COM object lifetimes: `ComPtr<T>`, refcounting, `IDisposable`, finalizer traps, and how to prove you leaked nothing with `ReportLiveDeviceObjects`
 - [ ] **4.4** A resource manager: load once, reference count, hot-reload shaders on file change
 - [ ] **4.5** Entities and components — a pragmatic middle ground, not a full ECS (and an honest note on when a real ECS would be worth it)
 - [ ] **4.6** The scene: update order, spawn/destroy queues, and why you never mutate a list you're iterating
-- [ ] **4.7** Input manager: `IsDown` vs `WasPressed` vs `WasReleased`, action mapping, mouse state
+- [ ] **4.7** Input manager: polled state over Silk.NET's events — `IsDown` vs `WasPressed` vs `WasReleased`, action mapping, mouse state
 - [ ] **4.8** Logging + a debug overlay: FPS, frame time, draw calls, entity count
-- [ ] **4.9** Config: window size, vsync, key bindings from a JSON file
+- [ ] **4.9** Config: window size, sync interval, key bindings from a JSON file
 
 ## Part 5 — 2D Renderer
-*Goal: draw lots of things, fast, without touching raw GL again in game code.*
+*Goal: draw lots of things, fast, without touching the raw device context again in game code.*
 
-- [ ] **5.1** A line renderer — the Asteroids look. Dynamic VBO, `GL.LineWidth` and its lies
+- [ ] **5.1** A line renderer — the Asteroids look. Dynamic vertex buffer with `Map`/`Unmap`, `LineList` topology, and the fact that D3D11 has **no** line width at all (so we expand lines into quads ourselves)
 - [ ] **5.2** Why one draw call per object kills you: the case for batching
-- [ ] **5.3** A sprite batcher: build a vertex buffer in C#, flush once per frame
-- [ ] **5.4** Textures: loading a PNG with StbImageSharp, filtering, wrapping, mipmaps
-- [ ] **5.5** Texture units and sampling multiple textures in one shader
-- [ ] **5.6** Blending and alpha: `SrcAlpha`/`OneMinusSrcAlpha`, additive glow, and render-state management
+- [ ] **5.3** A sprite batcher: build a vertex buffer in C#, `Map` with `WriteDiscard`, flush once per frame
+- [ ] **5.4** Textures: loading a PNG with StbImageSharp into an `ID3D11Texture2D` + shader resource view, filtering, mipmaps
+- [ ] **5.5** Sampler states, texture slots, and sampling multiple textures in one pixel shader
+- [ ] **5.6** Blend states: `SrcAlpha`/`InvSrcAlpha`, additive glow, and why D3D11 makes render state immutable objects you bind
 - [ ] **5.7** Texture atlases and UV math (goodbye texture-swap draw calls)
 - [ ] **5.8** Bitmap font text rendering — FPS on the screen, not the title bar
 - [ ] **5.9** A `Renderer2D` façade: `DrawLine`, `DrawPolygon`, `DrawSprite`, `DrawText`
@@ -191,15 +203,15 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [ ] **6.8** Game states: attract mode → playing → dying → game over, as a state machine
 - [ ] **6.9** Lives, respawn invulnerability, wave progression, and the UFO
 - [ ] **6.10** Particles: explosions, engine exhaust, a pooled particle system
-- [ ] **6.11** Audio: OpenAL through OpenTK, one-shot SFX, and the classic two-tone heartbeat
+- [ ] **6.11** Audio: `Silk.NET.OpenAL`, one-shot SFX, and the classic two-tone heartbeat
 - [ ] **6.12** Juice: screen shake, hit pause, line flicker. The 5% that's 50% of the feel
 - [ ] **6.13** High score persistence, pause menu, and calling it done
 
 ## Part 7 — Framebuffers and Post-Processing
 *Goal: render to a texture, then abuse it.*
 
-- [ ] **7.1** FBOs: rendering to a texture instead of the screen
-- [ ] **7.2** The full-screen quad pass and a pass-through post shader
+- [ ] **7.1** Render-to-texture: a texture that is both a render target view and a shader resource view, instead of drawing to the back buffer
+- [ ] **7.2** The full-screen pass and a pass-through post shader (and the vertex-less fullscreen triangle trick)
 - [ ] **7.3** Gaussian blur, two-pass, and the bright-pass filter
 - [ ] **7.4** Bloom — vector lines that actually glow
 - [ ] **7.5** A CRT shader: scanlines, barrel distortion, phosphor decay (optional and very fun)
@@ -212,17 +224,17 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 ## Part 8 — Into the Third Dimension
 *Goal: everything you know, plus a Z axis and a depth buffer.*
 
-- [ ] **8.1** Perspective projection: FOV, near/far planes, and why the far plane ruins your day
-- [ ] **8.2** The depth buffer, depth testing, z-fighting, and precision
+- [ ] **8.1** Perspective projection: FOV, near/far planes, D3D's `[0,1]` clip depth, and why the near plane (not the far one) is what actually ruins your day
+- [ ] **8.2** The depth buffer: a depth `ID3D11Texture2D` + depth stencil view, depth stencil state, z-fighting, precision, and reversed-Z as the fix
 - [ ] **8.3** A rotating cube — 3D hello world
 - [ ] **8.4** The view matrix, `LookAt`, and thinking in camera space
 - [ ] **8.5** A free-fly camera: WASD + mouse look, yaw/pitch, and the gimbal lock you're about to hit
 - [ ] **8.6** Quaternions, gently. What they solve, how to use them, why you don't need the math behind them yet
-- [ ] **8.7** Face culling, winding order, and the "half my model is invisible" bug
+- [ ] **8.7** Rasterizer state: face culling, winding order (D3D defaults to clockwise-front), and the "half my model is invisible" bug
 - [ ] **8.8** Normals: what they are, how to compute them, flat vs smooth shading
 - [ ] **8.9** Blinn-Phong lighting: ambient + diffuse + specular, built up one term at a time
-- [ ] **8.10** Directional, point, and spot lights; attenuation; multiple lights in one shader
-- [ ] **8.11** Materials and a uniform buffer object (UBO) for shared per-frame data
+- [ ] **8.10** Directional, point, and spot lights; attenuation; multiple lights via a structured buffer
+- [ ] **8.11** Materials, and splitting constant buffers by update frequency (per-frame / per-object / per-material)
 - [ ] **8.12** Loading models: OBJ by hand first (it's simple and educational), then glTF via a library
 - [ ] **8.13** Textured 3D: diffuse maps, and why sRGB vs linear color space matters
 - [ ] **8.14** Normal mapping and tangent space (optional but high impact)
@@ -233,7 +245,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [ ] **9.1** Scene graph: parent/child transforms, dirty flags, world matrix caching
 - [ ] **9.2** Bounding volumes: AABB, spheres, and computing them from a mesh
 - [ ] **9.3** Frustum culling — the biggest perf win you'll ever get for the least code
-- [ ] **9.4** Instanced rendering: 5,000 asteroids in one draw call
+- [ ] **9.4** Instanced rendering: a per-instance vertex buffer slot and `DrawIndexedInstanced` — 5,000 asteroids in one draw call
 - [ ] **9.5** A skybox / procedural starfield with correct depth handling
 - [ ] **9.6** Shadow mapping: depth-from-light, peter-panning, acne, PCF (optional, hardest lesson in the book)
 - [ ] **9.7** Transparency: sorting, and why it's genuinely unsolved
@@ -258,8 +270,8 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 *Goal: know why it's slow before you guess.*
 
 - [ ] **11.1** CPU profiling: `Stopwatch` scopes, allocation tracking, and killing GC spikes in the loop
-- [ ] **11.2** GPU timer queries and a real frame budget breakdown
-- [ ] **11.3** RenderDoc: capture a frame, inspect every draw call, find the bug you couldn't see
+- [ ] **11.2** `ID3D11Query` timestamp + disjoint queries, and a real frame budget breakdown
+- [ ] **11.3** RenderDoc / PIX: capture a frame, inspect every draw call and bound resource, find the bug you couldn't see (and name your objects so the capture is readable)
 - [ ] **11.4** ImGui.NET: a live debug panel for tweaking values without recompiling
 - [ ] **11.5** An in-engine scene inspector and entity editor
 - [ ] **11.6** Asset hot-reload for shaders, textures, and models
@@ -278,7 +290,7 @@ to want from an engine you built yourself. **Prerequisites: 8.6 (quaternions), 8
 - [ ] **12.2** Morph targets / blend shapes: interpolating between whole vertex sets. The simple case first
 - [ ] **12.3** Skeletons: joint hierarchy, local vs model space, the bind pose, and the inverse bind matrix (the concept people get stuck on — we'll do it slowly)
 - [ ] **12.4** Skinning weights: joint indices and weights as vertex attributes, the 4-influence convention, weight normalization
-- [ ] **12.5** Linear blend skinning in the vertex shader, and the bone matrix palette as a UBO
+- [ ] **12.5** Linear blend skinning in the vertex shader, and the bone matrix palette as a structured buffer
 - [ ] **12.6** The candy-wrapper artifact: where LBS breaks down, and dual quaternion skinning as the fix
 - [ ] **12.7** glTF animation data: samplers, channels, keyframes, and the three interpolation modes
 - [ ] **12.8** Sampling a pose at time *t*: quaternion SLERP, and why you never LERP a rotation
@@ -302,7 +314,7 @@ to want from an engine you built yourself. **Prerequisites: 8.6 (quaternions), 8
 - [ ] **13.5** A simple scripting layer (Roslyn or Lua) for gameplay
 - [ ] **13.6** Networking: two-player Asteroids with client-side prediction
 - [ ] **13.7** Gamepad support and rebindable input
-- [ ] **13.8** A Vulkan backend behind the same `IGraphicsDevice` interface (the boss fight)
+- [ ] **13.8** A second backend (D3D12 or Vulkan) behind the same `IGraphicsDevice` interface (the boss fight)
 
 ---
 
@@ -326,7 +338,7 @@ to want from an engine you built yourself. **Prerequisites: 8.6 (quaternions), 8
 
 Each lesson links to its authored file. Check it off when you've worked through it; jot notes inline after the link if you want.
 
-> **🔀 Foundation pivot (as of 1.5):** the engine moves off **OpenTK / OpenGL** onto **DirectX 11 via Silk.NET** — Windows-only, by choice. Lessons 1.1–1.4 stand as the OpenGL foundation; from 1.5 on, the rendering stack is D3D11. Parts 2–13 are still OpenGL-worded and will be re-scoped to D3D11 as a separate pass.
+> **🔀 Foundation pivot (as of 1.5):** the engine moved off **OpenTK / OpenGL** onto **Direct3D 11 via Silk.NET** — Windows-only, by choice. Lessons 1.1–1.4 stand as written and are left in OpenGL terms; they were the foundation at the time. Everything from 1.5 on, and all of Parts 2–13 above, is now written in D3D11 terms.
 
 - [x] [1.1 — A Window and a GL Context](lessons/1.1-a-window-and-a-gl-context.md)
 - [x] [1.2 — The Game Loop and Delta Time](lessons/1.2-the-game-loop-and-delta-time.md)
@@ -336,14 +348,17 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [1.6 — Keyboard Input and ESC to Quit](lessons/1.6-keyboard-input-and-esc-to-quit.md)
 - [x] [1.7 — Window Resize, the Viewport, and Aspect Ratio](lessons/1.7-window-resize-viewport-and-aspect-ratio.md)
 - [x] [1.8 — VSync, Tearing, and the Frame Rate Cap](lessons/1.8-vsync-tearing-and-the-frame-rate-cap.md)
-- [ ] [2.1 — The Graphics Pipeline, End to End](lessons/2.1-the-graphics-pipeline-end-to-end.md)
+- [x] [2.1 — The Graphics Pipeline, End to End](lessons/2.1-the-graphics-pipeline-end-to-end.md)
+- [ ] [2.2 — Vertex Buffer Objects](lessons/2.2-vertex-buffer-objects.md)
 
 ---
 
 ## Reference
 
-- [OpenTK docs](https://opentk.net/learn/index.html)
-- [LearnOpenGL](https://learnopengl.com/) — C++, but the concepts map 1:1 and it's the best there is
+- [Direct3D 11 programming guide](https://learn.microsoft.com/en-us/windows/win32/direct3d11/dx-graphics-overviews) and the [D3D11 API reference](https://learn.microsoft.com/en-us/windows/win32/api/d3d11/) — the authority, and Silk.NET's names map to it almost exactly
+- [HLSL reference](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl)
+- [Silk.NET docs](https://dotnet.github.io/Silk.NET/) and the [Silk.NET D3D11 samples](https://github.com/dotnet/Silk.NET/tree/main/examples/CSharp) — the samples are the real documentation
+- [LearnOpenGL](https://learnopengl.com/) — still the best explanation of the *concepts* anywhere. C++ and OpenGL, so translate the API calls; the pipeline, math, and lighting chapters transfer 1:1
 - [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) — required reading for 4.2
 - [The Book of Shaders](https://thebookofshaders.com/) — fragment shader intuition
 - [Kenney assets](https://kenney.nl/assets) (CC0), [OpenGameArt](https://opengameart.org/), [Poly Haven](https://polyhaven.com/) (CC0), [freesound](https://freesound.org/)
