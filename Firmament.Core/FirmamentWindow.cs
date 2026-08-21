@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using Firmament.Core.Extensions;
+using Firmament.Core.Types;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
@@ -55,7 +56,11 @@ public unsafe class FirmamentWindow : IDisposable
 	private ComPtr<IDXGISwapChain1> swapChain;
 	private uint swapChainFlags;
 	private float[] targetColor;
+	private List<nint> unmanagedSemanticNames;
 	private int updatesSinceLastReport;
+
+	private ComPtr<ID3D11Buffer> vertexBuffer;
+	private InputElementDesc[] vertexLayoutDescription;
 
 	public FirmamentWindow(int width, int height, string title)
 	{
@@ -102,11 +107,39 @@ public unsafe class FirmamentWindow : IDisposable
 		InterpolateClearColor();
 	}
 
+	private byte* AllocatedSemanticName(string semanticName)
+	{
+		var pointer = SilkMarshal.StringToPtr(semanticName, NativeStringEncoding.LPTStr);
+
+		unmanagedSemanticNames.Add(pointer);
+
+		return (byte*)pointer;
+	}
+
 	private void CreateRenderTargetView()
 	{
 		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
 		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
 		backBuffer.Dispose();
+	}
+
+	private void CreateVertexBuffer()
+	{
+		Vertex[] vertices = [new(0.0f, 0.5f, 1f, 0f, 0f), new(0.5f, -0.5f, 0f, 1f, 0f), new(-0.5f, -0.5f, 0f, 0f, 1f)];
+
+		var bufferDescription = new BufferDesc
+		{
+			ByteWidth = (uint)(sizeof(Vertex) * vertices.Length),
+			Usage = Usage.Immutable,
+			BindFlags = (uint)BindFlag.VertexBuffer,
+		};
+
+		fixed (Vertex* vertexPtr = vertices)
+		{
+			var initialData = new SubresourceData { PSysMem = vertexPtr };
+
+			SilkMarshal.ThrowHResult(device.CreateBuffer(in bufferDescription, in initialData, ref vertexBuffer));
+		}
 	}
 
 	private void CyclePresentSyncInterval()
@@ -132,6 +165,33 @@ public unsafe class FirmamentWindow : IDisposable
 		}
 
 		return "no-sync";
+	}
+
+	private void DescribeVertexLayout()
+	{
+		vertexLayoutDescription =
+		[
+			new InputElementDesc
+			{
+				SemanticName = AllocatedSemanticName("POSITION"),
+				SemanticIndex = 0,
+				Format = Format.FormatR32G32Float,
+				InputSlot = 0,
+				AlignedByteOffset = 0,
+				InputSlotClass = InputClassification.PerVertexData,
+				InstanceDataStepRate = 0,
+			},
+			new InputElementDesc
+			{
+				SemanticName = AllocatedSemanticName("COLOR"),
+				SemanticIndex = 0,
+				Format = Format.FormatR32G32B32Float,
+				InputSlot = 0,
+				AlignedByteOffset = 8,
+				InputSlotClass = InputClassification.PerVertexData,
+				InstanceDataStepRate = 0,
+			},
+		];
 	}
 
 	private void GetGamepad()
