@@ -31,6 +31,8 @@ public unsafe class FirmamentWindow : IDisposable
 		Color.MediumOrchid,
 	];
 
+	private readonly List<nint> unmanagedSemanticNames = [];
+
 	private readonly IWindow window;
 	private bool allowTearingSupported;
 	private uint backBufferHeight;
@@ -56,7 +58,6 @@ public unsafe class FirmamentWindow : IDisposable
 	private ComPtr<IDXGISwapChain1> swapChain;
 	private uint swapChainFlags;
 	private float[] targetColor;
-	private List<nint> unmanagedSemanticNames;
 	private int updatesSinceLastReport;
 
 	private ComPtr<ID3D11Buffer> vertexBuffer;
@@ -87,6 +88,13 @@ public unsafe class FirmamentWindow : IDisposable
 		device.Dispose();
 		input.Dispose();
 		window.Dispose();
+
+		vertexBuffer.Dispose();
+
+		foreach (var semanticName in unmanagedSemanticNames)
+		{
+			SilkMarshal.Free(semanticName);
+		}
 	}
 
 	public void Run()
@@ -114,6 +122,14 @@ public unsafe class FirmamentWindow : IDisposable
 		unmanagedSemanticNames.Add(pointer);
 
 		return (byte*)pointer;
+	}
+
+	private void BindVertexBuffer()
+	{
+		var stride = (uint)sizeof(Vertex);
+		var offset = 0u;
+
+		deviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, ref stride, ref offset);
 	}
 
 	private void CreateRenderTargetView()
@@ -350,6 +366,9 @@ public unsafe class FirmamentWindow : IDisposable
 
 		GetKeyboard();
 		GetGamepad();
+
+		CreateVertexBuffer();
+		DescribeVertexLayout();
 	}
 
 	private void OnRender(double delta)
@@ -366,6 +385,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
 		deviceContext.ClearRenderTargetView(renderTargetView, ref currentClearColor[0]);
+
+		BindVertexBuffer();
 
 		SilkMarshal.ThrowHResult(swapChain.Present(presentSyncInterval, GetPresentFlags()));
 
