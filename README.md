@@ -138,7 +138,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 
 - [x] **2.1** The graphics pipeline, end to end, no code — a mental model to hang everything else on
 - [x] **2.2** Vertex buffers: `ID3D11Buffer`, `CreateBuffer`, and getting floats onto the GPU
-- [ ] **2.3** Input layouts: telling the input assembler what those floats *mean* (`InputElementDesc`, stride, offset)
+- [x] **2.3** Input layouts: telling the input assembler what those floats *mean* (`InputElementDesc`, stride, offset)
 - [ ] **2.4** HLSL: your first vertex + pixel shader, as in-line strings
 - [ ] **2.5** Compiling with `D3DCompile`, reading the error blob, and creating the shader objects (do this now, thank yourself forever)
 - [ ] **2.6** `Draw` — bind the pipeline, set the topology, and the triangle appears
@@ -350,7 +350,8 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [1.8 — VSync, Tearing, and the Frame Rate Cap](lessons/1.8-vsync-tearing-and-the-frame-rate-cap.md)
 - [x] [2.1 — The Graphics Pipeline, End to End](lessons/2.1-the-graphics-pipeline-end-to-end.md)
 - [x] [2.2 — Vertex Buffer Objects](lessons/2.2-vertex-buffer-objects.md)
-- [ ] [2.3 — Input Layouts: Telling the IA What the Bytes Mean](lessons/2.3-input-layouts.md)
+- [x] [2.3 — Input Layouts: Telling the IA What the Bytes Mean](lessons/2.3-input-layouts.md)
+- [ ] [2.4 — HLSL: Your First Vertex and Pixel Shader](lessons/2.4-hlsl-vertex-and-pixel-shaders.md)
 
 ---
 

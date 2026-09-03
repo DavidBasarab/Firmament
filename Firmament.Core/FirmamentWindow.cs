@@ -117,7 +117,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private byte* AllocatedSemanticName(string semanticName)
 	{
-		var pointer = SilkMarshal.StringToPtr(semanticName, NativeStringEncoding.LPTStr);
+		var pointer = SilkMarshal.StringToPtr(semanticName);
 
 		unmanagedSemanticNames.Add(pointer);
 
