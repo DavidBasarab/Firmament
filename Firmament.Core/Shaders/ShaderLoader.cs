@@ -3,18 +3,11 @@ using FatCat.Toolkit.Data;
 
 namespace Firmament.Core.Shaders;
 
-public class ShaderCacheItem(string fullName, string source) : ICacheItem
-{
-	public string CacheId => FullName;
-
-	public string FullName { get; set; } = fullName;
-
-	public string Source { get; set; } = source;
-}
-
 public interface IShaderLoader
 {
 	string GetShaderSource(string shaderName);
+
+	void PreLoadShader(string shaderName);
 }
 
 public class ShaderLoader(IEmbeddedResourceRepository repository, IFatCatCache<ShaderCacheItem> cache) : IShaderLoader
@@ -33,11 +26,17 @@ public class ShaderLoader(IEmbeddedResourceRepository repository, IFatCatCache<S
 		return source;
 	}
 
+	public void PreLoadShader(string shaderName)
+	{
+		GetShaderSource(shaderName);
+	}
+
 	private string AddToCache(string fullName)
 	{
 		var source = repository.GetText(ShaderMarker.Marker.Assembly, fullName);
 
 		cache.Add(new ShaderCacheItem(fullName, source));
+
 		return source;
 	}
 

@@ -1,6 +1,9 @@
 using System.Drawing;
 using System.Runtime.CompilerServices;
+using FatCat.Toolkit.Console;
+using FatCat.Toolkit.Injection;
 using Firmament.Core.Extensions;
+using Firmament.Core.Shaders;
 using Firmament.Core.Types;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
@@ -316,6 +319,8 @@ public unsafe class FirmamentWindow : IDisposable
 		dxgi = DXGI.GetApi(window);
 		d3D11 = D3D11.GetApi(window);
 
+		PreLoadShaders();
+
 		SilkMarshal.ThrowHResult(
 			d3D11.CreateDevice(
 				default(ComPtr<IDXGIAdapter>),
@@ -410,6 +415,17 @@ public unsafe class FirmamentWindow : IDisposable
 	private void OnUpdate(double delta)
 	{
 		updatesSinceLastReport++;
+	}
+
+	private void PreLoadShaders()
+	{
+		ConsoleLog.WriteMagenta("Pre-loading shaders...");
+
+		var loader = SystemScope.Container.Resolve<IShaderLoader>();
+
+		loader.PreLoadShader("pass-through");
+
+		ConsoleLog.WriteMagenta("Shader pre-loading complete.");
 	}
 
 	private void ReportPerformance()
