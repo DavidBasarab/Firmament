@@ -23,6 +23,6 @@
 		<PackageReference Include="Silk.NET.Input" Version="2.23.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ClCompile Include="Shaders\pass-through.hlsl" />
+		<EmbeddedResource Include="**\*.hlsl" />
 	</ItemGroup>
 </Project>

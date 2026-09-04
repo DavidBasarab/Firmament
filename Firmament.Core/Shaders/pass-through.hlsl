@@ -20,7 +20,7 @@ vertex_output vertex_main(vertex_input input)
 	return output;
 }
 
-float4 PixelMain(vertex_output input) : SV_TARGET
+float4 pixel_main(vertex_output input) : SV_TARGET
 {
 	return float4(input.color, 1.0f);
 }
