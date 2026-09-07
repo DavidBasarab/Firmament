@@ -140,7 +140,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [x] **2.2** Vertex buffers: `ID3D11Buffer`, `CreateBuffer`, and getting floats onto the GPU
 - [x] **2.3** Input layouts: telling the input assembler what those floats *mean* (`InputElementDesc`, stride, offset)
 - [x] **2.4** HLSL: your first vertex + pixel shader, as in-line strings
-- [ ] **2.5** Compiling with `D3DCompile`, reading the error blob, and creating the shader objects (do this now, thank yourself forever)
+- [x] **2.5** Compiling with `D3DCompile`, reading the error blob, and creating the shader objects (do this now, thank yourself forever)
 - [ ] **2.6** `Draw` — bind the pipeline, set the topology, and the triangle appears
 - [ ] **2.7** A `Shader` class: compile from file, hold the input layout, release COM objects properly
 - [ ] **2.8** Vertex colors and how the rasterizer interpolates between vertices
@@ -352,7 +352,8 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [2.2 — Vertex Buffer Objects](lessons/2.2-vertex-buffer-objects.md)
 - [x] [2.3 — Input Layouts: Telling the IA What the Bytes Mean](lessons/2.3-input-layouts.md)
 - [x] [2.4 — HLSL: Your First Vertex and Pixel Shader](lessons/2.4-hlsl-vertex-and-pixel-shaders.md)
-- [ ] [2.5 — Compiling HLSL, Reading the Error Blob, and Creating the Shader Objects](lessons/2.5-compiling-shaders-and-creating-shader-objects.md)
+- [x] [2.5 — Compiling HLSL, Reading the Error Blob, and Creating the Shader Objects](lessons/2.5-compiling-shaders-and-creating-shader-objects.md)
+- [ ] [2.6 — `Draw`: Bind the Pipeline, Set the Topology, and the Triangle Appears](lessons/2.6-draw-the-triangle-appears.md)
 
 ---
 

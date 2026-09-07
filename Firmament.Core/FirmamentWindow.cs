@@ -279,7 +279,7 @@ public unsafe class FirmamentWindow : IDisposable
 			return $"Compiling `{entryPoint}` failed with HRESULT 0x{result:x8} and produced no error text.";
 		}
 
-		var message = SilkMarshal.PtrToString((nint)errors.GetBufferPointer(), NativeStringEncoding.LPTStr);
+		var message = SilkMarshal.PtrToString((nint)errors.GetBufferPointer());
 
 		return $"Compiling `{entryPoint}` failed: {message}";
 	}
