@@ -1,11 +1,12 @@
 using System.Drawing;
 using System.Runtime.CompilerServices;
+using System.Text;
 using FatCat.Toolkit.Console;
-using FatCat.Toolkit.Injection;
 using Firmament.Core.Extensions;
 using Firmament.Core.Shaders;
 using Firmament.Core.Types;
 using Silk.NET.Core.Native;
+using Silk.NET.Direct3D.Compilers;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
 using Silk.NET.Input;
@@ -49,9 +50,11 @@ public unsafe class FirmamentWindow : IDisposable
 	private DXGI dxgi;
 	private IGamepad gamepad;
 	private IInputContext input;
+	private ComPtr<ID3D11InputLayout> inputLayout;
 	private IKeyboard keyboard;
 	private bool pauseBackgroundSwitch;
 	private double peakRenderSeconds;
+	private ComPtr<ID3D11PixelShader> pixelShader;
 	private uint presentSyncInterval = 1;
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 	private double rendersSinceLastReport;
@@ -65,6 +68,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private ComPtr<ID3D11Buffer> vertexBuffer;
 	private InputElementDesc[] vertexLayoutDescription;
+
+	private ComPtr<ID3D11VertexShader> vertexShader;
 
 	public FirmamentWindow(int width, int height, string title)
 	{
@@ -98,6 +103,10 @@ public unsafe class FirmamentWindow : IDisposable
 		{
 			SilkMarshal.Free(semanticName);
 		}
+
+		inputLayout.Dispose();
+		pixelShader.Dispose();
+		vertexShader.Dispose();
 	}
 
 	public void Run()
@@ -135,11 +144,103 @@ public unsafe class FirmamentWindow : IDisposable
 		deviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, ref stride, ref offset);
 	}
 
+	private ComPtr<ID3D10Blob> CompileShader(D3DCompiler compiler, string source, string entryPoint, string target)
+	{
+		ConsoleLog.WriteCyan($"Compiling shader `{entryPoint}` for target `{target}`...");
+
+		ComPtr<ID3D10Blob> byteCode = default;
+		ComPtr<ID3D10Blob> errors = default;
+
+		try
+		{
+			var sourceBytes = Encoding.ASCII.GetBytes(source);
+
+			ConsoleLog.WriteYellow(source);
+
+			ConsoleLog.WriteDarkYellow($"Shader source length: {sourceBytes.Length} bytes");
+
+			fixed (byte* sourcePointer = sourceBytes)
+			{
+				var result = compiler.Compile(
+					sourcePointer,
+					(nuint)sourceBytes.Length,
+					(byte*)null,
+					null,
+					ref Unsafe.NullRef<ID3DInclude>(),
+					entryPoint,
+					target,
+					0,
+					0,
+					ref byteCode,
+					ref errors
+				);
+
+				if (result < 9)
+				{
+					throw new InvalidOperationException(DescribeCompileFailure(entryPoint, result, errors));
+				}
+			}
+		}
+		finally
+		{
+			errors.Dispose();
+		}
+
+		return byteCode;
+	}
+
 	private void CreateRenderTargetView()
 	{
 		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
 		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
 		backBuffer.Dispose();
+	}
+
+	private void CreateShaders()
+	{
+		var loader = Factory.Get<IShaderLoader>();
+		var source = loader.GetShaderSource("pass-through");
+		var compiler = D3DCompiler.GetApi();
+
+		var vertexByteCode = CompileShader(compiler, source, "vertex_main", "vs_5_0");
+		var pixelByteCode = CompileShader(compiler, source, "pixel_main", "ps_5_0");
+
+		SilkMarshal.ThrowHResult(
+			device.CreateVertexShader(
+				vertexByteCode.GetBufferPointer(),
+				vertexByteCode.GetBufferSize(),
+				ref Unsafe.NullRef<ID3D11ClassLinkage>(),
+				ref vertexShader
+			)
+		);
+
+		SilkMarshal.ThrowHResult(
+			device.CreatePixelShader(
+				pixelByteCode.GetBufferPointer(),
+				pixelByteCode.GetBufferSize(),
+				ref Unsafe.NullRef<ID3D11ClassLinkage>(),
+				ref pixelShader
+			)
+		);
+
+		CreateInputLayout(vertexByteCode);
+
+		vertexByteCode.Dispose();
+		pixelByteCode.Dispose();
+		compiler.Dispose();
+	}
+
+	private void CreateInputLayout(ComPtr<ID3D10Blob> vertexByteCode)
+	{
+		SilkMarshal.ThrowHResult(
+			device.CreateInputLayout(
+				ref vertexLayoutDescription[0],
+				(uint)vertexLayoutDescription.Length,
+				vertexByteCode.GetBufferPointer(),
+				vertexByteCode.GetBufferSize(),
+				ref inputLayout
+			)
+		);
 	}
 
 	private void CreateVertexBuffer()
@@ -169,6 +270,18 @@ public unsafe class FirmamentWindow : IDisposable
 			1 => 2,
 			_ => 0,
 		};
+	}
+
+	private string DescribeCompileFailure(string entryPoint, int result, ComPtr<ID3D10Blob> errors)
+	{
+		if (errors.Handle is null)
+		{
+			return $"Compiling `{entryPoint}` failed with HRESULT 0x{result:x8} and produced no error text.";
+		}
+
+		var message = SilkMarshal.PtrToString((nint)errors.GetBufferPointer(), NativeStringEncoding.LPTStr);
+
+		return $"Compiling `{entryPoint}` failed: {message}";
 	}
 
 	private string DescribePresentMode()
@@ -374,6 +487,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 		CreateVertexBuffer();
 		DescribeVertexLayout();
+
+		CreateShaders();
 	}
 
 	private void OnRender(double delta)
@@ -421,7 +536,7 @@ public unsafe class FirmamentWindow : IDisposable
 	{
 		ConsoleLog.WriteMagenta("Pre-loading shaders...");
 
-		var loader = SystemScope.Container.Resolve<IShaderLoader>();
+		var loader = Factory.Get<IShaderLoader>();
 
 		loader.PreLoadShader("pass-through");
 
