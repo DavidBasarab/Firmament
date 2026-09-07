@@ -155,8 +155,6 @@ public unsafe class FirmamentWindow : IDisposable
 		{
 			var sourceBytes = Encoding.ASCII.GetBytes(source);
 
-			ConsoleLog.WriteYellow(source);
-
 			ConsoleLog.WriteDarkYellow($"Shader source length: {sourceBytes.Length} bytes");
 
 			fixed (byte* sourcePointer = sourceBytes)
@@ -177,6 +175,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 				if (result < 0)
 				{
+					ConsoleLog.WriteDarkRed($"Shader compilation failed for entry point `{entryPoint}` and target `{target}`");
+
 					throw new InvalidOperationException(DescribeCompileFailure(entryPoint, result, errors));
 				}
 			}
