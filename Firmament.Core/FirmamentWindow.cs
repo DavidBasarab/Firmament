@@ -175,7 +175,7 @@ public unsafe class FirmamentWindow : IDisposable
 					ref errors
 				);
 
-				if (result < 9)
+				if (result < 0)
 				{
 					throw new InvalidOperationException(DescribeCompileFailure(entryPoint, result, errors));
 				}
