@@ -284,6 +284,19 @@ public unsafe class FirmamentWindow : IDisposable
 		return $"Compiling `{entryPoint}` failed: {message}";
 	}
 
+	private void DrawTriangle()
+	{
+		deviceContext.IASetInputLayout(inputLayout);
+		deviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
+
+		deviceContext.VSSetShader(vertexShader, null, 0);
+		deviceContext.PSSetShader(pixelShader, null, 0);
+
+		deviceContext.Draw(3, 0);
+
+		deviceContext.
+	}
+
 	private string DescribePresentMode()
 	{
 		if (presentSyncInterval > 0)
