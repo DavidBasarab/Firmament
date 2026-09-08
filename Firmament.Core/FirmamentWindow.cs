@@ -189,6 +189,19 @@ public unsafe class FirmamentWindow : IDisposable
 		return byteCode;
 	}
 
+	private void CreateInputLayout(ComPtr<ID3D10Blob> vertexByteCode)
+	{
+		SilkMarshal.ThrowHResult(
+			device.CreateInputLayout(
+				ref vertexLayoutDescription[0],
+				(uint)vertexLayoutDescription.Length,
+				vertexByteCode.GetBufferPointer(),
+				vertexByteCode.GetBufferSize(),
+				ref inputLayout
+			)
+		);
+	}
+
 	private void CreateRenderTargetView()
 	{
 		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
@@ -228,19 +241,6 @@ public unsafe class FirmamentWindow : IDisposable
 		vertexByteCode.Dispose();
 		pixelByteCode.Dispose();
 		compiler.Dispose();
-	}
-
-	private void CreateInputLayout(ComPtr<ID3D10Blob> vertexByteCode)
-	{
-		SilkMarshal.ThrowHResult(
-			device.CreateInputLayout(
-				ref vertexLayoutDescription[0],
-				(uint)vertexLayoutDescription.Length,
-				vertexByteCode.GetBufferPointer(),
-				vertexByteCode.GetBufferSize(),
-				ref inputLayout
-			)
-		);
 	}
 
 	private void CreateVertexBuffer()
@@ -284,19 +284,6 @@ public unsafe class FirmamentWindow : IDisposable
 		return $"Compiling `{entryPoint}` failed: {message}";
 	}
 
-	private void DrawTriangle()
-	{
-		deviceContext.IASetInputLayout(inputLayout);
-		deviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-
-		deviceContext.VSSetShader(vertexShader, null, 0);
-		deviceContext.PSSetShader(pixelShader, null, 0);
-
-		deviceContext.Draw(3, 0);
-
-		deviceContext.
-	}
-
 	private string DescribePresentMode()
 	{
 		if (presentSyncInterval > 0)
@@ -337,6 +324,17 @@ public unsafe class FirmamentWindow : IDisposable
 				InstanceDataStepRate = 0,
 			},
 		];
+	}
+
+	private void DrawTriangle()
+	{
+		deviceContext.IASetInputLayout(inputLayout);
+		deviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
+
+		deviceContext.VSSetShader(vertexShader, null, 0);
+		deviceContext.PSSetShader(pixelShader, null, 0);
+
+		deviceContext.Draw(3, 0);
 	}
 
 	private void GetGamepad()
@@ -520,6 +518,8 @@ public unsafe class FirmamentWindow : IDisposable
 		deviceContext.ClearRenderTargetView(renderTargetView, ref currentClearColor[0]);
 
 		BindVertexBuffer();
+
+		DrawTriangle();
 
 		SilkMarshal.ThrowHResult(swapChain.Present(presentSyncInterval, GetPresentFlags()));
 
