@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Text;
 using FatCat.Toolkit.Console;
@@ -18,31 +17,16 @@ namespace Firmament.Core;
 
 public unsafe class FirmamentWindow : IDisposable
 {
-	private const double ColorTransitionSeconds = 5.0;
 	private const double ReportIntervalSeconds = 0.1;
-
-	private readonly List<Color> colors =
-	[
-		Color.BlueViolet,
-		Color.Crimson,
-		Color.DarkOrange,
-		Color.DeepSkyBlue,
-		Color.ForestGreen,
-		Color.Gold,
-		Color.HotPink,
-		Color.Indigo,
-		Color.LimeGreen,
-		Color.MediumOrchid,
-	];
 
 	private readonly List<nint> unmanagedSemanticNames = [];
 
 	private bool allowTearingSupported;
 	private uint backBufferHeight;
 	private uint backBufferWidth;
-	private int colorIndex;
-	private double colorTransitionProgress;
-	private float[] currentClearColor;
+
+	private float[] clearColor = [0.0f, 0.0f, 0.0f, 1.0f];
+
 	private D3D11 d3D11;
 	private ComPtr<ID3D11Device> device;
 	private ComPtr<ID3D11DeviceContext> deviceContext;
@@ -59,10 +43,10 @@ public unsafe class FirmamentWindow : IDisposable
 	private double rendersSinceLastReport;
 	private int resizeCount;
 	private double secondsSinceLastReport;
-	private float[] startColor;
+
 	private ComPtr<IDXGISwapChain1> swapChain;
 	private uint swapChainFlags;
-	private float[] targetColor;
+
 	private int updatesSinceLastReport;
 
 	private ComPtr<ID3D11Buffer> vertexBuffer;
@@ -88,6 +72,12 @@ public unsafe class FirmamentWindow : IDisposable
 		Window.Render += OnRender;
 		Window.FramebufferResize += OnFrameBufferResize;
 	}
+
+	public event Action Load;
+
+	public event Action<double> Render;
+
+	public event Action<double> Update;
 
 	public void Dispose()
 	{
@@ -115,17 +105,9 @@ public unsafe class FirmamentWindow : IDisposable
 		Window.Run();
 	}
 
-	private void AdvanceColorTransition(double delta)
+	public void SetClearColor(float[] color)
 	{
-		colorTransitionProgress += delta / ColorTransitionSeconds;
-
-		while (colorTransitionProgress >= 1.0)
-		{
-			colorTransitionProgress -= 1.0;
-			MoveToNextColor();
-		}
-
-		InterpolateClearColor();
+		clearColor = color;
 	}
 
 	private byte* AllocatedSemanticName(string semanticName)
@@ -358,11 +340,6 @@ public unsafe class FirmamentWindow : IDisposable
 		}
 	}
 
-	private int GetNextColorIndex()
-	{
-		return (colorIndex + 1) % colors.Count;
-	}
-
 	private uint GetPresentFlags()
 	{
 		if (presentSyncInterval == 0 && allowTearingSupported)
@@ -371,24 +348,6 @@ public unsafe class FirmamentWindow : IDisposable
 		}
 
 		return 0;
-	}
-
-	private void InitializeColorTransition()
-	{
-		startColor = colors[colorIndex].ToArray();
-		targetColor = colors[GetNextColorIndex()].ToArray();
-		currentClearColor = [0f, 0f, 0f, 0f];
-		colorTransitionProgress = 0.0;
-	}
-
-	private void InterpolateClearColor()
-	{
-		var t = (float)colorTransitionProgress;
-
-		for (var channel = 0; channel < currentClearColor.Length; channel++)
-		{
-			currentClearColor[channel] = startColor[channel] + (targetColor[channel] - startColor[channel]) * t;
-		}
 	}
 
 	private bool IsTearingSupported(ComPtr<IDXGIFactory2> factory)
@@ -405,13 +364,6 @@ public unsafe class FirmamentWindow : IDisposable
 		factory5.Dispose();
 
 		return result >= 0 && allowTearing != 0;
-	}
-
-	private void MoveToNextColor()
-	{
-		colorIndex = GetNextColorIndex();
-		startColor = targetColor;
-		targetColor = colors[GetNextColorIndex()].ToArray();
 	}
 
 	private void OnFrameBufferResize(Vector2D<int> size)
@@ -501,22 +453,18 @@ public unsafe class FirmamentWindow : IDisposable
 		DescribeVertexLayout();
 
 		CreateShaders();
+
+		Load?.Invoke();
 	}
 
 	private void OnRender(double delta)
 	{
-		if (currentClearColor is null)
-		{
-			InitializeColorTransition();
-		}
+		if (!pauseBackgroundSwitch) { }
 
-		if (!pauseBackgroundSwitch)
-		{
-			AdvanceColorTransition(delta);
-		}
+		Render?.Invoke(delta);
 
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
-		deviceContext.ClearRenderTargetView(renderTargetView, ref currentClearColor[0]);
+		deviceContext.ClearRenderTargetView(renderTargetView, ref clearColor[0]);
 
 		BindVertexBuffer();
 
@@ -544,6 +492,8 @@ public unsafe class FirmamentWindow : IDisposable
 	private void OnUpdate(double delta)
 	{
 		updatesSinceLastReport++;
+
+		Update?.Invoke(delta);
 	}
 
 	private void PreLoadShaders()
