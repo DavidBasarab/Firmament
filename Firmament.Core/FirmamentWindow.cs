@@ -37,7 +37,6 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private readonly List<nint> unmanagedSemanticNames = [];
 
-	private readonly IWindow window;
 	private bool allowTearingSupported;
 	private uint backBufferHeight;
 	private uint backBufferWidth;
@@ -73,19 +72,12 @@ public unsafe class FirmamentWindow : IDisposable
 
 	public FirmamentWindow(int width, int height, string title)
 	{
-		var options = WindowOptions.Default with
-		{
-			API = GraphicsAPI.None,
-			Size = new Vector2D<int>(width, height),
-			Title = title,
-		};
+		GameObjects.CreateWindow(width, height, title);
 
-		window = Window.Create(options);
-
-		window.Load += OnLoad;
-		window.Update += OnUpdate;
-		window.Render += OnRender;
-		window.FramebufferResize += OnFrameBufferResize;
+		GameObjects.Window.Load += OnLoad;
+		GameObjects.Window.Update += OnUpdate;
+		GameObjects.Window.Render += OnRender;
+		GameObjects.Window.FramebufferResize += OnFrameBufferResize;
 	}
 
 	public void Dispose()
@@ -95,7 +87,7 @@ public unsafe class FirmamentWindow : IDisposable
 		deviceContext.Dispose();
 		device.Dispose();
 		input.Dispose();
-		window.Dispose();
+		GameObjects.Dispose();
 
 		vertexBuffer.Dispose();
 
@@ -111,7 +103,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 	public void Run()
 	{
-		window.Run();
+		GameObjects.Window.Run();
 	}
 
 	private void AdvanceColorTransition(double delta)
@@ -427,21 +419,21 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
 	{
-		button.RunAction(ButtonName.Start, () => window.Close());
+		button.RunAction(ButtonName.Start, () => GameObjects.Window.Close());
 		button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
 	}
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
 		key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-		key.RunAction(Key.Escape, () => window.Close());
+		key.RunAction(Key.Escape, () => GameObjects.Window.Close());
 		key.RunAction(Key.V, CyclePresentSyncInterval);
 	}
 
 	private void OnLoad()
 	{
-		dxgi = DXGI.GetApi(window);
-		d3D11 = D3D11.GetApi(window);
+		dxgi = GameObjects.GetDxgi();
+		d3D11 = GameObjects.GetD3D11();
 
 		PreLoadShaders();
 
@@ -478,7 +470,7 @@ public unsafe class FirmamentWindow : IDisposable
 		SilkMarshal.ThrowHResult(
 			factory.CreateSwapChainForHwnd(
 				device,
-				window.Native.DXHandle.Value,
+				GameObjects.Window.Native.DXHandle.Value,
 				in swapChainDesc,
 				null,
 				ref Unsafe.NullRef<IDXGIOutput>(),
@@ -489,9 +481,9 @@ public unsafe class FirmamentWindow : IDisposable
 		factory.Dispose();
 
 		CreateRenderTargetView();
-		SetViewPort((uint)window.FramebufferSize.X, (uint)window.FramebufferSize.Y);
+		SetViewPort((uint)GameObjects.Window.FramebufferSize.X, (uint)GameObjects.Window.FramebufferSize.Y);
 
-		input = window.CreateInput();
+		input = GameObjects.Window.CreateInput();
 
 		GetKeyboard();
 		GetGamepad();
@@ -563,7 +555,7 @@ public unsafe class FirmamentWindow : IDisposable
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
 		var aspectRatio = (float)backBufferWidth / backBufferHeight;
 
-		window.Title =
+		GameObjects.Window.Title =
 			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
 	}
 
