@@ -10,8 +10,8 @@ public static class Program
 	{
 		SystemScope.Initialize(new ContainerBuilder(), ScopeOptions.SetLifetimeScope);
 
-		using var window = new FirmamentWindow(1280, 720, "Firmament");
+		var game = Factory.Get<LearningGame>();
 
-		window.Run();
+		game.Run();
 	}
 }
