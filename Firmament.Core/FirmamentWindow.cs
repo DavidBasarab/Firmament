@@ -16,13 +16,9 @@ namespace Firmament.Core;
 
 public unsafe class FirmamentWindow : IDisposable
 {
-	private const double ReportIntervalSeconds = 0.1;
-
 	private readonly List<nint> unmanagedSemanticNames = [];
 
-	private bool allowTearingSupported;
-	private uint backBufferHeight;
-	private uint backBufferWidth;
+	public bool AllowTearingSupported { get; private set; }
 
 	private float[] clearColor = [0.0f, 0.0f, 0.0f, 1.0f];
 
@@ -34,27 +30,29 @@ public unsafe class FirmamentWindow : IDisposable
 	private IInputContext input;
 	private ComPtr<ID3D11InputLayout> inputLayout;
 
-	private double peakRenderSeconds;
 	private ComPtr<ID3D11PixelShader> pixelShader;
-	private uint presentSyncInterval = 1;
+
+	public uint PresentSyncInterval { get; private set; } = 1;
+
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
-	private double rendersSinceLastReport;
-	private int resizeCount;
-	private double secondsSinceLastReport;
 
 	private ComPtr<IDXGISwapChain1> swapChain;
 	private uint swapChainFlags;
-
-	private int updatesSinceLastReport;
 
 	private ComPtr<ID3D11Buffer> vertexBuffer;
 	private InputElementDesc[] vertexLayoutDescription;
 
 	private ComPtr<ID3D11VertexShader> vertexShader;
 
+	public uint BackBufferHeight { get; private set; }
+
+	public uint BackBufferWidth { get; private set; }
+
 	public IGamepad Gamepad { get; private set; }
 
 	public IKeyboard Keyboard { get; private set; }
+
+	public int ResizeCount { get; private set; }
 
 	private IWindow SilkWindow { get; }
 
@@ -122,6 +120,11 @@ public unsafe class FirmamentWindow : IDisposable
 	public void SetClearColor(float[] color)
 	{
 		clearColor = color;
+	}
+
+	public void SetWindowTitle(string title)
+	{
+		SilkWindow.Title = title;
 	}
 
 	private byte* AllocatedSemanticName(string semanticName)
@@ -261,7 +264,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void CyclePresentSyncInterval()
 	{
-		presentSyncInterval = presentSyncInterval switch
+		PresentSyncInterval = PresentSyncInterval switch
 		{
 			0 => 1,
 			1 => 2,
@@ -279,21 +282,6 @@ public unsafe class FirmamentWindow : IDisposable
 		var message = SilkMarshal.PtrToString((nint)errors.GetBufferPointer());
 
 		return $"Compiling `{entryPoint}` failed: {message}";
-	}
-
-	private string DescribePresentMode()
-	{
-		if (presentSyncInterval > 0)
-		{
-			return $"vsync {presentSyncInterval}";
-		}
-
-		if (allowTearingSupported)
-		{
-			return "tearing";
-		}
-
-		return "no-sync";
 	}
 
 	private void DescribeVertexLayout()
@@ -356,7 +344,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private uint GetPresentFlags()
 	{
-		if (presentSyncInterval == 0 && allowTearingSupported)
+		if (PresentSyncInterval == 0 && AllowTearingSupported)
 		{
 			return DXGI.PresentAllowTearing;
 		}
@@ -387,7 +375,7 @@ public unsafe class FirmamentWindow : IDisposable
 			return;
 		}
 
-		resizeCount++;
+		ResizeCount++;
 
 		ResizeSwapChain((uint)size.X, (uint)size.Y);
 	}
@@ -414,8 +402,8 @@ public unsafe class FirmamentWindow : IDisposable
 
 		SilkMarshal.ThrowHResult(dxgi.CreateDXGIFactory2(0, out ComPtr<IDXGIFactory2> factory));
 
-		allowTearingSupported = IsTearingSupported(factory);
-		swapChainFlags = allowTearingSupported ? (uint)SwapChainFlag.AllowTearing : 0;
+		AllowTearingSupported = IsTearingSupported(factory);
+		swapChainFlags = AllowTearingSupported ? (uint)SwapChainFlag.AllowTearing : 0;
 
 		var swapChainDesc = new SwapChainDesc1
 		{
@@ -468,29 +456,11 @@ public unsafe class FirmamentWindow : IDisposable
 
 		DrawTriangle();
 
-		SilkMarshal.ThrowHResult(swapChain.Present(presentSyncInterval, GetPresentFlags()));
-
-		secondsSinceLastReport += delta;
-		rendersSinceLastReport++;
-
-		if (delta > peakRenderSeconds)
-		{
-			peakRenderSeconds = delta;
-		}
-
-		if (secondsSinceLastReport < ReportIntervalSeconds)
-		{
-			return;
-		}
-
-		ReportPerformance();
-		ResetWindow();
+		SilkMarshal.ThrowHResult(swapChain.Present(PresentSyncInterval, GetPresentFlags()));
 	}
 
 	private void OnUpdate(double delta)
 	{
-		updatesSinceLastReport++;
-
 		Update?.Invoke(delta);
 	}
 
@@ -503,25 +473,6 @@ public unsafe class FirmamentWindow : IDisposable
 		loader.PreLoadShader("pass-through");
 
 		ConsoleLog.WriteMagenta("Shader pre-loading complete.");
-	}
-
-	private void ReportPerformance()
-	{
-		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
-		var avgMilliseconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
-		var peakMilliseconds = peakRenderSeconds * 1000.0;
-		var aspectRatio = (float)backBufferWidth / backBufferHeight;
-
-		// SilkWindow.Title =
-		// 	$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
-	}
-
-	private void ResetWindow()
-	{
-		secondsSinceLastReport = 0.0;
-		updatesSinceLastReport = 0;
-		rendersSinceLastReport = 0;
-		peakRenderSeconds = 0.0;
 	}
 
 	private void ResizeSwapChain(uint width, uint height)
@@ -552,7 +503,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 		deviceContext.RSSetViewports(1, ref viewport);
 
-		backBufferHeight = height;
-		backBufferWidth = width;
+		BackBufferHeight = height;
+		BackBufferWidth = width;
 	}
 }

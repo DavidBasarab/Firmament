@@ -8,6 +8,7 @@ namespace Firmament.Asteroids2D;
 public class LearningGame
 {
 	private const double ColorTransitionSeconds = 5.0;
+	private const double ReportIntervalSeconds = 0.1;
 
 	private readonly List<Color> colors =
 	[
@@ -27,8 +28,13 @@ public class LearningGame
 	private double colorTransitionProgress;
 	private float[] currentClearColor;
 	private bool pauseBackgroundSwitch;
+	private double peakRenderSeconds;
+	private double rendersSinceLastReport;
+
+	private double secondsSinceLastReport;
 	private float[] startColor;
 	private float[] targetColor;
+	private int updatesSinceLastReport;
 	private FirmamentWindow window;
 
 	public void OnLoad()
@@ -44,9 +50,22 @@ public class LearningGame
 		}
 
 		AdvanceColorTransition(delta);
+
+		secondsSinceLastReport += delta;
+		rendersSinceLastReport++;
+
+		if (delta > peakRenderSeconds)
+		{
+			peakRenderSeconds = delta;
+		}
+
+		ReportPerformance();
 	}
 
-	public void OnUpdate(double delta) { }
+	public void OnUpdate(double delta)
+	{
+		updatesSinceLastReport++;
+	}
 
 	public void Run()
 	{
@@ -80,6 +99,21 @@ public class LearningGame
 		InterpolateClearColor();
 
 		window.SetClearColor(currentClearColor);
+	}
+
+	private string DescribePresentMode()
+	{
+		if (window.PresentSyncInterval > 0)
+		{
+			return $"vsync {window.PresentSyncInterval}";
+		}
+
+		if (window.AllowTearingSupported)
+		{
+			return "tearing";
+		}
+
+		return "no-sync";
 	}
 
 	private int GetNextColorIndex()
@@ -126,5 +160,33 @@ public class LearningGame
 		key.RunAction(Key.Escape, () => window.Close());
 
 		// key.RunAction(Key.V, CyclePresentSyncInterval);
+	}
+
+	private void ReportPerformance()
+	{
+		if (secondsSinceLastReport < ReportIntervalSeconds)
+		{
+			return;
+		}
+
+		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
+		var avgMilliseconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
+		var peakMilliseconds = peakRenderSeconds * 1000.0;
+		var aspectRatio = (float)window.BackBufferWidth / window.BackBufferHeight;
+
+		var title =
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {window.ResizeCount} resizes | {window.BackBufferWidth}x{window.BackBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
+
+		window.SetWindowTitle(title);
+
+		ResetWindow();
+	}
+
+	private void ResetWindow()
+	{
+		secondsSinceLastReport = 0.0;
+		updatesSinceLastReport = 0;
+		rendersSinceLastReport = 0;
+		peakRenderSeconds = 0.0;
 	}
 }
