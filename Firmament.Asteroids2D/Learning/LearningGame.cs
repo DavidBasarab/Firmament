@@ -2,7 +2,7 @@ using Firmament.Core;
 using Firmament.Core.Extensions;
 using Silk.NET.Input;
 
-namespace Firmament.Asteroids2D;
+namespace Firmament.Asteroids2D.Learning;
 
 public class LearningGame
 {

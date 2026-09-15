@@ -1,5 +1,6 @@
 using Autofac;
 using FatCat.Toolkit.Injection;
+using Firmament.Asteroids2D.Learning;
 using Firmament.Core;
 
 namespace Firmament.Asteroids2D;

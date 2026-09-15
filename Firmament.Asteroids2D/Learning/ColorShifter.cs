@@ -2,7 +2,7 @@ using System.Drawing;
 using Firmament.Core;
 using Firmament.Core.Extensions;
 
-namespace Firmament.Asteroids2D;
+namespace Firmament.Asteroids2D.Learning;
 
 public class ColorShifter(LearningGame game)
 {
