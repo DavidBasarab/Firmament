@@ -7,7 +7,8 @@ namespace Firmament.Asteroids2D;
 public class LearningGame
 {
 	private const double ReportIntervalSeconds = 0.1;
-	private ColorShifter colorShifter;
+
+	public ColorShifter ColorShifter { get; private set; }
 
 	private double peakRenderSeconds;
 	private double rendersSinceLastReport;
@@ -20,14 +21,14 @@ public class LearningGame
 
 	public void OnLoad()
 	{
-		colorShifter = new ColorShifter(Window);
+		ColorShifter = new ColorShifter(this);
 
-		colorShifter.SetClearColor();
+		ColorShifter.SetInitialClearColor();
 	}
 
 	public void OnRender(double delta)
 	{
-		colorShifter.Render(delta);
+		ColorShifter.Render(delta);
 
 		secondsSinceLastReport += delta;
 		rendersSinceLastReport++;
@@ -89,13 +90,13 @@ public class LearningGame
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
 	{
 		button.RunAction(ButtonName.Start, Window.Close);
-		button.RunAction(ButtonName.A, colorShifter.ToggleBackgroundPause);
+		button.RunAction(ButtonName.A, ColorShifter.ToggleBackgroundPause);
 		button.RunAction(ButtonName.B, CyclePresentSyncInterval);
 	}
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
-		key.RunAction(Key.Space, colorShifter.ToggleBackgroundPause);
+		key.RunAction(Key.Space, ColorShifter.ToggleBackgroundPause);
 		key.RunAction(Key.Escape, () => Window.Close());
 		key.RunAction(Key.V, CyclePresentSyncInterval);
 	}
@@ -113,7 +114,7 @@ public class LearningGame
 		var aspectRatio = (float)Window.BackBufferWidth / Window.BackBufferHeight;
 
 		var title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {colorShifter.BackgroundPause} | {Window.ResizeCount} resizes | {Window.BackBufferWidth}x{Window.BackBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {ColorShifter.BackgroundPause} | {Window.ResizeCount} resizes | {Window.BackBufferWidth}x{Window.BackBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
 
 		Window.SetWindowTitle(title);
 

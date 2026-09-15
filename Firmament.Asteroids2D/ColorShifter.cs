@@ -4,7 +4,7 @@ using Firmament.Core.Extensions;
 
 namespace Firmament.Asteroids2D;
 
-public class ColorShifter(FirmamentWindow window)
+public class ColorShifter(LearningGame game)
 {
 	private const double ColorTransitionSeconds = 5.0;
 
@@ -31,6 +31,8 @@ public class ColorShifter(FirmamentWindow window)
 
 	public bool BackgroundPause { get; private set; }
 
+	private FirmamentWindow Window { get; } = game.Window;
+
 	public void Render(double delta)
 	{
 		if (currentClearColor is null)
@@ -41,9 +43,9 @@ public class ColorShifter(FirmamentWindow window)
 		AdvanceColorTransition(delta);
 	}
 
-	public void SetClearColor()
+	public void SetInitialClearColor()
 	{
-		window.SetClearColor(colors[0].ToArray());
+		Window.SetClearColor(colors[0].ToArray());
 	}
 
 	public void ToggleBackgroundPause()
@@ -68,7 +70,7 @@ public class ColorShifter(FirmamentWindow window)
 
 		InterpolateClearColor();
 
-		window.SetClearColor(currentClearColor);
+		Window.SetClearColor(currentClearColor);
 	}
 
 	private int GetNextColorIndex()
