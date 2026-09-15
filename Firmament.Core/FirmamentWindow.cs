@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using FatCat.Toolkit.Console;
-using Firmament.Core.Extensions;
 using Firmament.Core.Shaders;
 using Firmament.Core.Types;
 using Silk.NET.Core.Native;
@@ -31,10 +30,10 @@ public unsafe class FirmamentWindow : IDisposable
 	private ComPtr<ID3D11Device> device;
 	private ComPtr<ID3D11DeviceContext> deviceContext;
 	private DXGI dxgi;
-	private IGamepad gamepad;
+
 	private IInputContext input;
 	private ComPtr<ID3D11InputLayout> inputLayout;
-	private IKeyboard keyboard;
+
 	private bool pauseBackgroundSwitch;
 	private double peakRenderSeconds;
 	private ComPtr<ID3D11PixelShader> pixelShader;
@@ -54,7 +53,11 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private ComPtr<ID3D11VertexShader> vertexShader;
 
-	private IWindow Window { get; }
+	public IGamepad Gamepad { get; private set; }
+
+	public IKeyboard Keyboard { get; private set; }
+
+	private IWindow SilkWindow { get; }
 
 	public FirmamentWindow(int width, int height, string title)
 	{
@@ -65,13 +68,19 @@ public unsafe class FirmamentWindow : IDisposable
 			Title = title,
 		};
 
-		Window = Silk.NET.Windowing.Window.Create(options);
+		SilkWindow = Window.Create(options);
 
-		Window.Load += OnLoad;
-		Window.Update += OnUpdate;
-		Window.Render += OnRender;
-		Window.FramebufferResize += OnFrameBufferResize;
+		SilkWindow.Load += OnLoad;
+		SilkWindow.Update += OnUpdate;
+		SilkWindow.Render += OnRender;
+		SilkWindow.FramebufferResize += OnFrameBufferResize;
 	}
+
+	public event Action CleanUp;
+
+	public event Action<IGamepad, Button> GamepadButtonDown;
+
+	public event Action<IKeyboard, Key, int> KeyDown;
 
 	public event Action Load;
 
@@ -79,7 +88,10 @@ public unsafe class FirmamentWindow : IDisposable
 
 	public event Action<double> Update;
 
-	public event Action CleanUp;
+	public void Close()
+	{
+		SilkWindow.Close();
+	}
 
 	public void Dispose()
 	{
@@ -89,7 +101,7 @@ public unsafe class FirmamentWindow : IDisposable
 		deviceContext.Dispose();
 		device.Dispose();
 		input.Dispose();
-		Window.Dispose();
+		SilkWindow.Dispose();
 
 		vertexBuffer.Dispose();
 
@@ -105,7 +117,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 	public void Run()
 	{
-		Window.Run();
+		SilkWindow.Run();
 	}
 
 	public void SetClearColor(float[] color)
@@ -325,21 +337,21 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void GetGamepad()
 	{
-		gamepad = input.Gamepads.FirstOrDefault();
+		Gamepad = input.Gamepads.FirstOrDefault();
 
-		if (gamepad != null)
+		if (Gamepad != null && GamepadButtonDown is not null)
 		{
-			gamepad.ButtonDown += OnGamepadButtonDown;
+			Gamepad.ButtonDown += GamepadButtonDown;
 		}
 	}
 
 	private void GetKeyboard()
 	{
-		keyboard = input.Keyboards.FirstOrDefault();
+		Keyboard = input.Keyboards.FirstOrDefault();
 
-		if (keyboard != null)
+		if (Keyboard != null && KeyDown is not null)
 		{
-			keyboard.KeyDown += OnKeyDown;
+			Keyboard.KeyDown += KeyDown;
 		}
 	}
 
@@ -381,23 +393,10 @@ public unsafe class FirmamentWindow : IDisposable
 		ResizeSwapChain((uint)size.X, (uint)size.Y);
 	}
 
-	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
-	{
-		button.RunAction(ButtonName.Start, () => Window.Close());
-		button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-	}
-
-	private void OnKeyDown(IKeyboard source, Key key, int scancode)
-	{
-		key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-		key.RunAction(Key.Escape, () => Window.Close());
-		key.RunAction(Key.V, CyclePresentSyncInterval);
-	}
-
 	private void OnLoad()
 	{
-		dxgi = DXGI.GetApi(Window);
-		d3D11 = D3D11.GetApi(Window);
+		dxgi = DXGI.GetApi(SilkWindow);
+		d3D11 = D3D11.GetApi(SilkWindow);
 
 		SilkMarshal.ThrowHResult(
 			d3D11.CreateDevice(
@@ -432,7 +431,7 @@ public unsafe class FirmamentWindow : IDisposable
 		SilkMarshal.ThrowHResult(
 			factory.CreateSwapChainForHwnd(
 				device,
-				Window.Native.DXHandle.Value,
+				SilkWindow.Native.DXHandle.Value,
 				in swapChainDesc,
 				null,
 				ref Unsafe.NullRef<IDXGIOutput>(),
@@ -443,9 +442,9 @@ public unsafe class FirmamentWindow : IDisposable
 		factory.Dispose();
 
 		CreateRenderTargetView();
-		SetViewPort((uint)Window.FramebufferSize.X, (uint)Window.FramebufferSize.Y);
+		SetViewPort((uint)SilkWindow.FramebufferSize.X, (uint)SilkWindow.FramebufferSize.Y);
 
-		input = Window.CreateInput();
+		input = SilkWindow.CreateInput();
 
 		GetKeyboard();
 		GetGamepad();
@@ -516,7 +515,7 @@ public unsafe class FirmamentWindow : IDisposable
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
 		var aspectRatio = (float)backBufferWidth / backBufferHeight;
 
-		Window.Title =
+		SilkWindow.Title =
 			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
 	}
 

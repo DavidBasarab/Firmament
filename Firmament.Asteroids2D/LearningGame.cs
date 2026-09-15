@@ -1,6 +1,8 @@
 using System.Drawing;
 using Firmament.Core;
 using Firmament.Core.Extensions;
+using Silk.NET.Input;
+using Silk.NET.Windowing;
 
 namespace Firmament.Asteroids2D;
 
@@ -55,6 +57,8 @@ public class LearningGame
 		window.Update += OnUpdate;
 		window.Render += OnRender;
 		window.CleanUp += OnCleanUp;
+		window.KeyDown += OnKeyDown;
+		window.GamepadButtonDown += OnGamepadButtonDown;
 
 		window.Run();
 	}
@@ -95,6 +99,19 @@ public class LearningGame
 		{
 			currentClearColor[channel] = startColor[channel] + (targetColor[channel] - startColor[channel]) * t;
 		}
+	}
+
+	private void OnKeyDown(IKeyboard source, Key key, int scancode)
+	{
+		// key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		key.RunAction(Key.Escape, () => window.Close());
+		// key.RunAction(Key.V, CyclePresentSyncInterval);
+	}
+
+	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
+	{
+		// button.RunAction(ButtonName.Start, () => Window.Close());
+		// button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
 	}
 
 	private void MoveToNextColor()
