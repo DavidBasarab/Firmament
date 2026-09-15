@@ -34,7 +34,6 @@ public unsafe class FirmamentWindow : IDisposable
 	private IInputContext input;
 	private ComPtr<ID3D11InputLayout> inputLayout;
 
-	private bool pauseBackgroundSwitch;
 	private double peakRenderSeconds;
 	private ComPtr<ID3D11PixelShader> pixelShader;
 	private uint presentSyncInterval = 1;
@@ -460,8 +459,6 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private void OnRender(double delta)
 	{
-		if (!pauseBackgroundSwitch) { }
-
 		Render?.Invoke(delta);
 
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
@@ -515,8 +512,8 @@ public unsafe class FirmamentWindow : IDisposable
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
 		var aspectRatio = (float)backBufferWidth / backBufferHeight;
 
-		SilkWindow.Title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
+		// SilkWindow.Title =
+		// 	$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {resizeCount} resizes | {backBufferWidth}x{backBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
 	}
 
 	private void ResetWindow()

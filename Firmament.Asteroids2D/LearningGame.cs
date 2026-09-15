@@ -2,7 +2,6 @@ using System.Drawing;
 using Firmament.Core;
 using Firmament.Core.Extensions;
 using Silk.NET.Input;
-using Silk.NET.Windowing;
 
 namespace Firmament.Asteroids2D;
 
@@ -26,8 +25,8 @@ public class LearningGame
 
 	private int colorIndex;
 	private double colorTransitionProgress;
-
 	private float[] currentClearColor;
+	private bool pauseBackgroundSwitch;
 	private float[] startColor;
 	private float[] targetColor;
 	private FirmamentWindow window;
@@ -65,6 +64,11 @@ public class LearningGame
 
 	private void AdvanceColorTransition(double delta)
 	{
+		if (pauseBackgroundSwitch)
+		{
+			return;
+		}
+
 		colorTransitionProgress += delta / ColorTransitionSeconds;
 
 		while (colorTransitionProgress >= 1.0)
@@ -101,19 +105,6 @@ public class LearningGame
 		}
 	}
 
-	private void OnKeyDown(IKeyboard source, Key key, int scancode)
-	{
-		// key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-		key.RunAction(Key.Escape, () => window.Close());
-		// key.RunAction(Key.V, CyclePresentSyncInterval);
-	}
-
-	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
-	{
-		// button.RunAction(ButtonName.Start, () => Window.Close());
-		// button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-	}
-
 	private void MoveToNextColor()
 	{
 		colorIndex = GetNextColorIndex();
@@ -122,4 +113,18 @@ public class LearningGame
 	}
 
 	private void OnCleanUp() { }
+
+	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
+	{
+		// button.RunAction(ButtonName.Start, () => Window.Close());
+		// button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+	}
+
+	private void OnKeyDown(IKeyboard source, Key key, int scancode)
+	{
+		key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		key.RunAction(Key.Escape, () => window.Close());
+
+		// key.RunAction(Key.V, CyclePresentSyncInterval);
+	}
 }
