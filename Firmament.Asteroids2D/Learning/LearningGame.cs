@@ -6,16 +6,9 @@ namespace Firmament.Asteroids2D.Learning;
 
 public class LearningGame
 {
-	private const double ReportIntervalSeconds = 0.1;
+	private TitleReporter titleReporter;
 
 	public ColorShifter ColorShifter { get; private set; }
-
-	private double peakRenderSeconds;
-	private double rendersSinceLastReport;
-
-	private double secondsSinceLastReport;
-
-	private int updatesSinceLastReport;
 
 	public FirmamentWindow Window { get; private set; }
 
@@ -24,26 +17,19 @@ public class LearningGame
 		ColorShifter = new ColorShifter(this);
 
 		ColorShifter.SetInitialClearColor();
+
+		titleReporter = new TitleReporter(this);
 	}
 
 	public void OnRender(double delta)
 	{
 		ColorShifter.Render(delta);
-
-		secondsSinceLastReport += delta;
-		rendersSinceLastReport++;
-
-		if (delta > peakRenderSeconds)
-		{
-			peakRenderSeconds = delta;
-		}
-
-		ReportPerformance();
+		titleReporter.Render(delta);
 	}
 
 	public void OnUpdate(double delta)
 	{
-		updatesSinceLastReport++;
+		titleReporter.Update(delta);
 	}
 
 	public void Run()
@@ -70,21 +56,6 @@ public class LearningGame
 		};
 	}
 
-	private string DescribePresentMode()
-	{
-		if (Window.PresentSyncInterval > 0)
-		{
-			return $"vsync {Window.PresentSyncInterval}";
-		}
-
-		if (Window.AllowTearingSupported)
-		{
-			return "tearing";
-		}
-
-		return "no-sync";
-	}
-
 	private void OnCleanUp() { }
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
@@ -99,33 +70,5 @@ public class LearningGame
 		key.RunAction(Key.Space, ColorShifter.ToggleBackgroundPause);
 		key.RunAction(Key.Escape, () => Window.Close());
 		key.RunAction(Key.V, CyclePresentSyncInterval);
-	}
-
-	private void ReportPerformance()
-	{
-		if (secondsSinceLastReport < ReportIntervalSeconds)
-		{
-			return;
-		}
-
-		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
-		var avgMilliseconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
-		var peakMilliseconds = peakRenderSeconds * 1000.0;
-		var aspectRatio = (float)Window.BackBufferWidth / Window.BackBufferHeight;
-
-		var title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {ColorShifter.BackgroundPause} | {Window.ResizeCount} resizes | {Window.BackBufferWidth}x{Window.BackBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
-
-		Window.SetWindowTitle(title);
-
-		ResetWindow();
-	}
-
-	private void ResetWindow()
-	{
-		secondsSinceLastReport = 0.0;
-		updatesSinceLastReport = 0;
-		rendersSinceLastReport = 0;
-		peakRenderSeconds = 0.0;
 	}
 }
