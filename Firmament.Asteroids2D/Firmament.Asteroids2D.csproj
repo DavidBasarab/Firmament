@@ -8,6 +8,7 @@
 		<RootNamespace>Firmament.Asteroids2D</RootNamespace>
 		<AssemblyName>Firmament.Asteroids2D</AssemblyName>
 		<PlatformTarget>x64</PlatformTarget>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<PropertyGroup>
 		<CSharpier_Check>false</CSharpier_Check>

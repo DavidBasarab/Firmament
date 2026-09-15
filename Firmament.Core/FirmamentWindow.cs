@@ -1,10 +1,5 @@
 using System.Runtime.CompilerServices;
-using System.Text;
-using FatCat.Toolkit.Console;
-using Firmament.Core.Shaders;
-using Firmament.Core.Types;
 using Silk.NET.Core.Native;
-using Silk.NET.Direct3D.Compilers;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
 using Silk.NET.Input;
@@ -16,10 +11,6 @@ namespace Firmament.Core;
 
 public unsafe class FirmamentWindow : IDisposable
 {
-	private readonly List<nint> unmanagedSemanticNames = [];
-
-	public bool AllowTearingSupported { get; private set; }
-
 	private float[] clearColor = [0.0f, 0.0f, 0.0f, 1.0f];
 
 	private D3D11 d3D11;
@@ -28,29 +19,27 @@ public unsafe class FirmamentWindow : IDisposable
 	private DXGI dxgi;
 
 	private IInputContext input;
-	private ComPtr<ID3D11InputLayout> inputLayout;
-
-	private ComPtr<ID3D11PixelShader> pixelShader;
-
-	public uint PresentSyncInterval { get; set; } = 1;
 
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 
 	private ComPtr<IDXGISwapChain1> swapChain;
 	private uint swapChainFlags;
 
-	private ComPtr<ID3D11Buffer> vertexBuffer;
-	private InputElementDesc[] vertexLayoutDescription;
-
-	private ComPtr<ID3D11VertexShader> vertexShader;
+	public bool AllowTearingSupported { get; private set; }
 
 	public uint BackBufferHeight { get; private set; }
 
 	public uint BackBufferWidth { get; private set; }
 
+	public ComPtr<ID3D11Device> Device => device;
+
+	public ComPtr<ID3D11DeviceContext> DeviceContext => deviceContext;
+
 	public IGamepad Gamepad { get; private set; }
 
 	public IKeyboard Keyboard { get; private set; }
+
+	public uint PresentSyncInterval { get; set; } = 1;
 
 	public int ResizeCount { get; private set; }
 
@@ -99,17 +88,6 @@ public unsafe class FirmamentWindow : IDisposable
 		device.Dispose();
 		input.Dispose();
 		SilkWindow.Dispose();
-
-		vertexBuffer.Dispose();
-
-		foreach (var semanticName in unmanagedSemanticNames)
-		{
-			SilkMarshal.Free(semanticName);
-		}
-
-		inputLayout.Dispose();
-		pixelShader.Dispose();
-		vertexShader.Dispose();
 	}
 
 	public void Run()
@@ -127,189 +105,11 @@ public unsafe class FirmamentWindow : IDisposable
 		SilkWindow.Title = title;
 	}
 
-	private byte* AllocatedSemanticName(string semanticName)
-	{
-		var pointer = SilkMarshal.StringToPtr(semanticName);
-
-		unmanagedSemanticNames.Add(pointer);
-
-		return (byte*)pointer;
-	}
-
-	private void BindVertexBuffer()
-	{
-		var stride = (uint)sizeof(Vertex);
-		var offset = 0u;
-
-		deviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, ref stride, ref offset);
-	}
-
-	private ComPtr<ID3D10Blob> CompileShader(D3DCompiler compiler, string source, string entryPoint, string target)
-	{
-		ConsoleLog.WriteCyan($"Compiling shader `{entryPoint}` for target `{target}`...");
-
-		ComPtr<ID3D10Blob> byteCode = default;
-		ComPtr<ID3D10Blob> errors = default;
-
-		try
-		{
-			var sourceBytes = Encoding.ASCII.GetBytes(source);
-
-			ConsoleLog.WriteDarkYellow($"Shader source length: {sourceBytes.Length} bytes");
-
-			fixed (byte* sourcePointer = sourceBytes)
-			{
-				var result = compiler.Compile(
-					sourcePointer,
-					(nuint)sourceBytes.Length,
-					(byte*)null,
-					null,
-					ref Unsafe.NullRef<ID3DInclude>(),
-					entryPoint,
-					target,
-					0,
-					0,
-					ref byteCode,
-					ref errors
-				);
-
-				if (result < 0)
-				{
-					ConsoleLog.WriteDarkRed($"Shader compilation failed for entry point `{entryPoint}` and target `{target}`");
-
-					throw new InvalidOperationException(DescribeCompileFailure(entryPoint, result, errors));
-				}
-			}
-		}
-		finally
-		{
-			errors.Dispose();
-		}
-
-		return byteCode;
-	}
-
-	private void CreateInputLayout(ComPtr<ID3D10Blob> vertexByteCode)
-	{
-		SilkMarshal.ThrowHResult(
-			device.CreateInputLayout(
-				ref vertexLayoutDescription[0],
-				(uint)vertexLayoutDescription.Length,
-				vertexByteCode.GetBufferPointer(),
-				vertexByteCode.GetBufferSize(),
-				ref inputLayout
-			)
-		);
-	}
-
 	private void CreateRenderTargetView()
 	{
 		SilkMarshal.ThrowHResult(swapChain.GetBuffer(0, out ComPtr<ID3D11Texture2D> backBuffer));
 		SilkMarshal.ThrowHResult(device.CreateRenderTargetView(backBuffer, null, ref renderTargetView));
 		backBuffer.Dispose();
-	}
-
-	private void CreateShaders()
-	{
-		var loader = Factory.Get<IShaderLoader>();
-		var source = loader.GetShaderSource("pass-through");
-		var compiler = D3DCompiler.GetApi();
-
-		var vertexByteCode = CompileShader(compiler, source, "vertex_main", "vs_5_0");
-		var pixelByteCode = CompileShader(compiler, source, "pixel_main", "ps_5_0");
-
-		SilkMarshal.ThrowHResult(
-			device.CreateVertexShader(
-				vertexByteCode.GetBufferPointer(),
-				vertexByteCode.GetBufferSize(),
-				ref Unsafe.NullRef<ID3D11ClassLinkage>(),
-				ref vertexShader
-			)
-		);
-
-		SilkMarshal.ThrowHResult(
-			device.CreatePixelShader(
-				pixelByteCode.GetBufferPointer(),
-				pixelByteCode.GetBufferSize(),
-				ref Unsafe.NullRef<ID3D11ClassLinkage>(),
-				ref pixelShader
-			)
-		);
-
-		CreateInputLayout(vertexByteCode);
-
-		vertexByteCode.Dispose();
-		pixelByteCode.Dispose();
-		compiler.Dispose();
-	}
-
-	private void CreateVertexBuffer()
-	{
-		Vertex[] vertices = [new(0.0f, 0.5f, 1f, 0f, 0f), new(0.5f, -0.5f, 0f, 1f, 0f), new(-0.5f, -0.5f, 0f, 0f, 1f)];
-
-		var bufferDescription = new BufferDesc
-		{
-			ByteWidth = (uint)(sizeof(Vertex) * vertices.Length),
-			Usage = Usage.Immutable,
-			BindFlags = (uint)BindFlag.VertexBuffer,
-		};
-
-		fixed (Vertex* vertexPtr = vertices)
-		{
-			var initialData = new SubresourceData { PSysMem = vertexPtr };
-
-			SilkMarshal.ThrowHResult(device.CreateBuffer(in bufferDescription, in initialData, ref vertexBuffer));
-		}
-	}
-
-	private string DescribeCompileFailure(string entryPoint, int result, ComPtr<ID3D10Blob> errors)
-	{
-		if (errors.Handle is null)
-		{
-			return $"Compiling `{entryPoint}` failed with HRESULT 0x{result:x8} and produced no error text.";
-		}
-
-		var message = SilkMarshal.PtrToString((nint)errors.GetBufferPointer());
-
-		return $"Compiling `{entryPoint}` failed: {message}";
-	}
-
-	private void DescribeVertexLayout()
-	{
-		vertexLayoutDescription =
-		[
-			new InputElementDesc
-			{
-				SemanticName = AllocatedSemanticName("POSITION"),
-				SemanticIndex = 0,
-				Format = Format.FormatR32G32Float,
-				InputSlot = 0,
-				AlignedByteOffset = 0,
-				InputSlotClass = InputClassification.PerVertexData,
-				InstanceDataStepRate = 0,
-			},
-			new InputElementDesc
-			{
-				SemanticName = AllocatedSemanticName("COLOR"),
-				SemanticIndex = 0,
-				Format = Format.FormatR32G32B32Float,
-				InputSlot = 0,
-				AlignedByteOffset = 8,
-				InputSlotClass = InputClassification.PerVertexData,
-				InstanceDataStepRate = 0,
-			},
-		];
-	}
-
-	private void DrawTriangle()
-	{
-		deviceContext.IASetInputLayout(inputLayout);
-		deviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-
-		deviceContext.VSSetShader(vertexShader, null, 0);
-		deviceContext.PSSetShader(pixelShader, null, 0);
-
-		deviceContext.Draw(3, 0);
 	}
 
 	private void GetGamepad()
@@ -426,25 +226,15 @@ public unsafe class FirmamentWindow : IDisposable
 		GetKeyboard();
 		GetGamepad();
 
-		CreateVertexBuffer();
-		DescribeVertexLayout();
-
-		PreLoadShaders();
-		CreateShaders();
-
 		Load?.Invoke();
 	}
 
 	private void OnRender(double delta)
 	{
-		Render?.Invoke(delta);
-
 		deviceContext.OMSetRenderTargets(1, ref renderTargetView, (ComPtr<ID3D11DepthStencilView>)default);
 		deviceContext.ClearRenderTargetView(renderTargetView, ref clearColor[0]);
 
-		BindVertexBuffer();
-
-		DrawTriangle();
+		Render?.Invoke(delta);
 
 		SilkMarshal.ThrowHResult(swapChain.Present(PresentSyncInterval, GetPresentFlags()));
 	}
@@ -452,17 +242,6 @@ public unsafe class FirmamentWindow : IDisposable
 	private void OnUpdate(double delta)
 	{
 		Update?.Invoke(delta);
-	}
-
-	private void PreLoadShaders()
-	{
-		ConsoleLog.WriteMagenta("Pre-loading shaders...");
-
-		var loader = Factory.Get<IShaderLoader>();
-
-		loader.PreLoadShader("pass-through");
-
-		ConsoleLog.WriteMagenta("Shader pre-loading complete.");
 	}
 
 	private void ResizeSwapChain(uint width, uint height)
