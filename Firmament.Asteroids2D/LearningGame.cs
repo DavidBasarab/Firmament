@@ -1,4 +1,3 @@
-using System.Drawing;
 using Firmament.Core;
 using Firmament.Core.Extensions;
 using Silk.NET.Input;
@@ -7,49 +6,28 @@ namespace Firmament.Asteroids2D;
 
 public class LearningGame
 {
-	private const double ColorTransitionSeconds = 5.0;
 	private const double ReportIntervalSeconds = 0.1;
+	private ColorShifter colorShifter;
 
-	private readonly List<Color> colors =
-	[
-		Color.BlueViolet,
-		Color.Crimson,
-		Color.DarkOrange,
-		Color.DeepSkyBlue,
-		Color.ForestGreen,
-		Color.Gold,
-		Color.HotPink,
-		Color.Indigo,
-		Color.LimeGreen,
-		Color.MediumOrchid,
-	];
-
-	private int colorIndex;
-	private double colorTransitionProgress;
-	private float[] currentClearColor;
-	private bool pauseBackgroundSwitch;
 	private double peakRenderSeconds;
 	private double rendersSinceLastReport;
 
 	private double secondsSinceLastReport;
-	private float[] startColor;
-	private float[] targetColor;
+
 	private int updatesSinceLastReport;
-	private FirmamentWindow window;
+
+	public FirmamentWindow Window { get; private set; }
 
 	public void OnLoad()
 	{
-		window.SetClearColor(colors[0].ToArray());
+		colorShifter = new ColorShifter(Window);
+
+		colorShifter.SetClearColor();
 	}
 
 	public void OnRender(double delta)
 	{
-		if (currentClearColor is null)
-		{
-			InitializeColorTransition();
-		}
-
-		AdvanceColorTransition(delta);
+		colorShifter.Render(delta);
 
 		secondsSinceLastReport += delta;
 		rendersSinceLastReport++;
@@ -69,41 +47,21 @@ public class LearningGame
 
 	public void Run()
 	{
-		window = new FirmamentWindow(1280, 720, "Firmament");
+		Window = new FirmamentWindow(1280, 720, "Firmament");
 
-		window.Load += OnLoad;
-		window.Update += OnUpdate;
-		window.Render += OnRender;
-		window.CleanUp += OnCleanUp;
-		window.KeyDown += OnKeyDown;
-		window.GamepadButtonDown += OnGamepadButtonDown;
+		Window.Load += OnLoad;
+		Window.Update += OnUpdate;
+		Window.Render += OnRender;
+		Window.CleanUp += OnCleanUp;
+		Window.KeyDown += OnKeyDown;
+		Window.GamepadButtonDown += OnGamepadButtonDown;
 
-		window.Run();
-	}
-
-	private void AdvanceColorTransition(double delta)
-	{
-		if (pauseBackgroundSwitch)
-		{
-			return;
-		}
-
-		colorTransitionProgress += delta / ColorTransitionSeconds;
-
-		while (colorTransitionProgress >= 1.0)
-		{
-			colorTransitionProgress -= 1.0;
-			MoveToNextColor();
-		}
-
-		InterpolateClearColor();
-
-		window.SetClearColor(currentClearColor);
+		Window.Run();
 	}
 
 	private void CyclePresentSyncInterval()
 	{
-		window.PresentSyncInterval = window.PresentSyncInterval switch
+		Window.PresentSyncInterval = Window.PresentSyncInterval switch
 		{
 			0 => 1,
 			1 => 2,
@@ -113,12 +71,12 @@ public class LearningGame
 
 	private string DescribePresentMode()
 	{
-		if (window.PresentSyncInterval > 0)
+		if (Window.PresentSyncInterval > 0)
 		{
-			return $"vsync {window.PresentSyncInterval}";
+			return $"vsync {Window.PresentSyncInterval}";
 		}
 
-		if (window.AllowTearingSupported)
+		if (Window.AllowTearingSupported)
 		{
 			return "tearing";
 		}
@@ -126,49 +84,19 @@ public class LearningGame
 		return "no-sync";
 	}
 
-	private int GetNextColorIndex()
-	{
-		return (colorIndex + 1) % colors.Count;
-	}
-
-	private void InitializeColorTransition()
-	{
-		startColor = colors[colorIndex].ToArray();
-		targetColor = colors[GetNextColorIndex()].ToArray();
-		currentClearColor = [0f, 0f, 0f, 0f];
-		colorTransitionProgress = 0.0;
-	}
-
-	private void InterpolateClearColor()
-	{
-		var t = (float)colorTransitionProgress;
-
-		for (var channel = 0; channel < currentClearColor.Length; channel++)
-		{
-			currentClearColor[channel] = startColor[channel] + (targetColor[channel] - startColor[channel]) * t;
-		}
-	}
-
-	private void MoveToNextColor()
-	{
-		colorIndex = GetNextColorIndex();
-		startColor = targetColor;
-		targetColor = colors[GetNextColorIndex()].ToArray();
-	}
-
 	private void OnCleanUp() { }
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
 	{
-		button.RunAction(ButtonName.Start, () => window.Close());
-		button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		button.RunAction(ButtonName.Start, Window.Close);
+		button.RunAction(ButtonName.A, colorShifter.ToggleBackgroundPause);
 		button.RunAction(ButtonName.B, CyclePresentSyncInterval);
 	}
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
-		key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
-		key.RunAction(Key.Escape, () => window.Close());
+		key.RunAction(Key.Space, colorShifter.ToggleBackgroundPause);
+		key.RunAction(Key.Escape, () => Window.Close());
 		key.RunAction(Key.V, CyclePresentSyncInterval);
 	}
 
@@ -182,12 +110,12 @@ public class LearningGame
 		var framesPerSecond = rendersSinceLastReport / secondsSinceLastReport;
 		var avgMilliseconds = secondsSinceLastReport / rendersSinceLastReport * 1000.0;
 		var peakMilliseconds = peakRenderSeconds * 1000.0;
-		var aspectRatio = (float)window.BackBufferWidth / window.BackBufferHeight;
+		var aspectRatio = (float)Window.BackBufferWidth / Window.BackBufferHeight;
 
 		var title =
-			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {pauseBackgroundSwitch} | {window.ResizeCount} resizes | {window.BackBufferWidth}x{window.BackBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
+			$"Firmament - {framesPerSecond:F0} FPS | {avgMilliseconds:F2} ms avg | {peakMilliseconds:F2} ms peak | {updatesSinceLastReport} updates | Background Paused {colorShifter.BackgroundPause} | {Window.ResizeCount} resizes | {Window.BackBufferWidth}x{Window.BackBufferHeight} @ {aspectRatio:F2}:1 | {DescribePresentMode()}";
 
-		window.SetWindowTitle(title);
+		Window.SetWindowTitle(title);
 
 		ResetWindow();
 	}
