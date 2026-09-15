@@ -233,8 +233,8 @@ public unsafe class TriangleDrawer(LearningGame game) : IDisposable
 		Window.DeviceContext.IASetInputLayout(inputLayout);
 		Window.DeviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
 
-		Window.DeviceContext.VSSetShader(vertexShader, null, 0);
-		Window.DeviceContext.PSSetShader(pixelShader, null, 0);
+		Window.DeviceContext.VSSetShader(vertexShader, (ID3D11ClassInstance**)null, 0);
+		Window.DeviceContext.PSSetShader(pixelShader, (ID3D11ClassInstance**)null, 0);
 
 		Window.DeviceContext.Draw(3, 0);
 	}
