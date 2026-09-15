@@ -79,8 +79,11 @@ public unsafe class FirmamentWindow : IDisposable
 
 	public event Action<double> Update;
 
+	public event Action CleanUp;
+
 	public void Dispose()
 	{
+		CleanUp?.Invoke();
 		renderTargetView.Dispose();
 		swapChain.Dispose();
 		deviceContext.Dispose();
@@ -396,8 +399,6 @@ public unsafe class FirmamentWindow : IDisposable
 		dxgi = DXGI.GetApi(Window);
 		d3D11 = D3D11.GetApi(Window);
 
-		PreLoadShaders();
-
 		SilkMarshal.ThrowHResult(
 			d3D11.CreateDevice(
 				default(ComPtr<IDXGIAdapter>),
@@ -452,6 +453,7 @@ public unsafe class FirmamentWindow : IDisposable
 		CreateVertexBuffer();
 		DescribeVertexLayout();
 
+		PreLoadShaders();
 		CreateShaders();
 
 		Load?.Invoke();

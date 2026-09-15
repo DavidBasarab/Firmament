@@ -54,6 +54,7 @@ public class LearningGame
 		window.Load += OnLoad;
 		window.Update += OnUpdate;
 		window.Render += OnRender;
+		window.CleanUp += OnCleanUp;
 
 		window.Run();
 	}
@@ -102,4 +103,6 @@ public class LearningGame
 		startColor = targetColor;
 		targetColor = colors[GetNextColorIndex()].ToArray();
 	}
+
+	private void OnCleanUp() { }
 }
