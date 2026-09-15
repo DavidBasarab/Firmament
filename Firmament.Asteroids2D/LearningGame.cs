@@ -101,6 +101,16 @@ public class LearningGame
 		window.SetClearColor(currentClearColor);
 	}
 
+	private void CyclePresentSyncInterval()
+	{
+		window.PresentSyncInterval = window.PresentSyncInterval switch
+		{
+			0 => 1,
+			1 => 2,
+			_ => 0,
+		};
+	}
+
 	private string DescribePresentMode()
 	{
 		if (window.PresentSyncInterval > 0)
@@ -150,16 +160,16 @@ public class LearningGame
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
 	{
-		// button.RunAction(ButtonName.Start, () => Window.Close());
-		// button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		button.RunAction(ButtonName.Start, () => window.Close());
+		button.RunAction(ButtonName.A, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
+		button.RunAction(ButtonName.B, CyclePresentSyncInterval);
 	}
 
 	private void OnKeyDown(IKeyboard source, Key key, int scancode)
 	{
 		key.RunAction(Key.Space, () => pauseBackgroundSwitch = !pauseBackgroundSwitch);
 		key.RunAction(Key.Escape, () => window.Close());
-
-		// key.RunAction(Key.V, CyclePresentSyncInterval);
+		key.RunAction(Key.V, CyclePresentSyncInterval);
 	}
 
 	private void ReportPerformance()

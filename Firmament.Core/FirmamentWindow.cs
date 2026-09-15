@@ -32,7 +32,7 @@ public unsafe class FirmamentWindow : IDisposable
 
 	private ComPtr<ID3D11PixelShader> pixelShader;
 
-	public uint PresentSyncInterval { get; private set; } = 1;
+	public uint PresentSyncInterval { get; set; } = 1;
 
 	private ComPtr<ID3D11RenderTargetView> renderTargetView;
 
@@ -260,16 +260,6 @@ public unsafe class FirmamentWindow : IDisposable
 
 			SilkMarshal.ThrowHResult(device.CreateBuffer(in bufferDescription, in initialData, ref vertexBuffer));
 		}
-	}
-
-	private void CyclePresentSyncInterval()
-	{
-		PresentSyncInterval = PresentSyncInterval switch
-		{
-			0 => 1,
-			1 => 2,
-			_ => 0,
-		};
 	}
 
 	private string DescribeCompileFailure(string entryPoint, int result, ComPtr<ID3D10Blob> errors)
