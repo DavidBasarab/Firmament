@@ -142,7 +142,7 @@ There is no schedule. This is a hobby. A lesson is 20–90 minutes.
 - [x] **2.4** HLSL: your first vertex + pixel shader, as in-line strings
 - [x] **2.5** Compiling with `D3DCompile`, reading the error blob, and creating the shader objects (do this now, thank yourself forever)
 - [x] **2.6** `Draw` — bind the pipeline, set the topology, and the triangle appears
-- [ ] **2.7** A `Shader` class: compile from file, hold the input layout, release COM objects properly
+- [x] **2.7** A `Shader` class: compile from file, hold the input layout, release COM objects properly
 - [ ] **2.8** Vertex colors and how the rasterizer interpolates between vertices
 - [ ] **2.9** Index buffers: drawing a quad with 4 vertices instead of 6, and `DrawIndexed`
 - [ ] **2.10** The D3D11 debug layer and `ID3D11InfoQueue`: turn HRESULTs and silent state errors into something you can read
@@ -354,7 +354,8 @@ Each lesson links to its authored file. Check it off when you've worked through 
 - [x] [2.4 — HLSL: Your First Vertex and Pixel Shader](lessons/2.4-hlsl-vertex-and-pixel-shaders.md)
 - [x] [2.5 — Compiling HLSL, Reading the Error Blob, and Creating the Shader Objects](lessons/2.5-compiling-shaders-and-creating-shader-objects.md)
 - [x] [2.6 — `Draw`: Bind the Pipeline, Set the Topology, and the Triangle Appears](lessons/2.6-draw-the-triangle-appears.md)
-- [ ] [2.7 — A `Shader` Class: Own the Compile, the Input Layout, and the Release](lessons/2.7-a-shader-class.md)
+- [x] [2.7 — A `Shader` Class: Own the Compile, the Input Layout, and the Release](lessons/2.7-a-shader-class.md)
+- [ ] [2.8 — Vertex Colors and How the Rasterizer Interpolates](lessons/2.8-vertex-colors-and-interpolation.md)
 
 ---
 
