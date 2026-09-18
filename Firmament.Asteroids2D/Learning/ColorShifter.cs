@@ -4,7 +4,7 @@ using Firmament.Core.Extensions;
 
 namespace Firmament.Asteroids2D.Learning;
 
-public class ColorShifter(LearningGame game)
+public class ColorShifter(LearningGame game) : GameAction(game)
 {
 	private const double ColorTransitionSeconds = 5.0;
 
@@ -30,8 +30,6 @@ public class ColorShifter(LearningGame game)
 	private float[] targetColor;
 
 	public bool BackgroundPause { get; private set; }
-
-	private FirmamentWindow Window { get; } = game.Window;
 
 	public void Render(double delta)
 	{

@@ -7,15 +7,13 @@ using Silk.NET.DXGI;
 
 namespace Firmament.Asteroids2D.Learning;
 
-public unsafe class TriangleDrawer(LearningGame game) : IDisposable
+public unsafe class TriangleDrawer(LearningGame game) : GameAction(game), IDisposable
 {
 	private readonly List<nint> unmanagedSemanticNames = [];
 
 	private Shader shader;
 
 	private ComPtr<ID3D11Buffer> vertexBuffer;
-
-	private FirmamentWindow Window { get; } = game.Window;
 
 	public void Dispose()
 	{
@@ -51,7 +49,7 @@ public unsafe class TriangleDrawer(LearningGame game) : IDisposable
 		var stride = (uint)sizeof(Vertex);
 		var offset = 0u;
 
-		Window.DeviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, ref stride, ref offset);
+		DeviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, ref stride, ref offset);
 	}
 
 	private void CreateVertexBuffer()
@@ -102,8 +100,8 @@ public unsafe class TriangleDrawer(LearningGame game) : IDisposable
 
 	private void DrawTriangle()
 	{
-		Window.DeviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-		Window.DeviceContext.Draw(3, 0);
+		DeviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
+		DeviceContext.Draw(3, 0);
 	}
 
 	private void FreeSemanticNames()
