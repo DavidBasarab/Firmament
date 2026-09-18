@@ -64,7 +64,7 @@ public class LearningGame
 
 	private void OnCleanUp()
 	{
-		triangleDrawer.CleanUp();
+		triangleDrawer.Dispose();
 	}
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
