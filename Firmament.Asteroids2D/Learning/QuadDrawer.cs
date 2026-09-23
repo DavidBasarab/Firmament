@@ -7,7 +7,7 @@ using Silk.NET.DXGI;
 
 namespace Firmament.Asteroids2D.Learning;
 
-public unsafe class TriangleDrawer(LearningGame game) : GameAction(game), IDisposable
+public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposable
 {
 	private readonly List<nint> unmanagedSemanticNames = [];
 

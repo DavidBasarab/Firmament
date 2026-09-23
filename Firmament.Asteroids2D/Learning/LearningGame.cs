@@ -7,7 +7,7 @@ namespace Firmament.Asteroids2D.Learning;
 public class LearningGame
 {
 	private TitleReporter titleReporter;
-	private TriangleDrawer triangleDrawer;
+	private QuadDrawer quadDrawer;
 
 	public ColorShifter ColorShifter { get; private set; }
 
@@ -21,16 +21,16 @@ public class LearningGame
 
 		titleReporter = new TitleReporter(this);
 
-		triangleDrawer = new TriangleDrawer(this);
+		quadDrawer = new QuadDrawer(this);
 
-		triangleDrawer.Load();
+		quadDrawer.Load();
 	}
 
 	public void OnRender(double delta)
 	{
 		ColorShifter.Render(delta);
 		titleReporter.Render(delta);
-		triangleDrawer.Render(delta);
+		quadDrawer.Render(delta);
 	}
 
 	public void OnUpdate(double delta)
@@ -64,7 +64,7 @@ public class LearningGame
 
 	private void OnCleanUp()
 	{
-		triangleDrawer.Dispose();
+		quadDrawer.Dispose();
 	}
 
 	private void OnGamepadButtonDown(IGamepad gamepad, Button button)
