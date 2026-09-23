@@ -1,28 +1,16 @@
-using System.Runtime.InteropServices;
+// ReSharper disable InconsistentNaming
 
 namespace Firmament.Core.Types;
 
-[StructLayout(LayoutKind.Sequential, Pack = 4)]
-public struct Vertex
+public struct Vertex(float x, float y, float r, float g, float b)
 {
-	public Vertex() { }
+	public float X = x;
 
-	public Vertex(float x, float y, float r, float g, float b)
-	{
-		X = x;
-		Y = y;
-		R = r;
-		G = g;
-		B = b;
-	}
+	public float Y = y;
 
-	public float X { get; set; }
+	public float R = r;
 
-	public float Y { get; set; }
+	public float G = g;
 
-	public float R { get; set; }
-
-	public float G { get; set; }
-
-	public float B { get; set; }
+	public float B = b;
 }
