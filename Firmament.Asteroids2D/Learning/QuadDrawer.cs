@@ -11,13 +11,13 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 {
 	private const float TurnInSeconds = 2.0f;
 
-	private static Vertex LowerLeft => new(-0.5f, -0.5f, 1f, 1f, 1f);
+	private static Vertex LowerLeft { get; set; } = new(-0.5f, -0.5f, 1f, 1f, 1f);
 
-	private static Vertex LowerRight => new(0.5f, -0.5f, 0f, 0f, 1f);
+	private static Vertex LowerRight { get; set; } = new(0.5f, -0.5f, 0f, 0f, 1f);
 
-	private static Vertex UpperLeft => new(-0.5f, 0.5f, 1f, 0f, 0f);
+	private static Vertex UpperLeft { get; set; } = new(-0.5f, 0.5f, 1f, 0f, 0f);
 
-	private static Vertex UpperRight => new(0.5f, 0.5f, 0f, 1f, 0f);
+	private static Vertex UpperRight { get; set; } = new(0.5f, 0.5f, 0f, 1f, 0f);
 
 	private readonly List<nint> unmanagedSemanticNames = [];
 	private ComPtr<ID3D11Buffer> indexBuffer;
@@ -35,13 +35,15 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 
 	public void Load()
 	{
+		CreateIndexBuffer();
+
 		LoadShader();
 	}
 
 	public void Render(double delta)
 	{
-		CreateVertexBuffer();
-		CreateIndexBuffer();
+		// Could this stay in load and I just change the objects?
+		CreateVertexBuffer(delta);
 
 		BindVertexBuffer();
 		BindIndexBuffer();
@@ -91,8 +93,21 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 		}
 	}
 
-	private void CreateVertexBuffer()
+	private float progress = 1.0f;
+	private float startAngle;
+	private float targetAngle;
+
+	private void CreateVertexBuffer(double delta)
 	{
+		var progress = Math.Min(1.0, this.progress + delta / TurnInSeconds);
+
+		var angle = startAngle + (targetAngle - startAngle) * (float)progress;
+
+		UpperLeft = RotateAround(UpperLeft, angle);
+		UpperRight = RotateAround(UpperRight, angle);
+		LowerRight = RotateAround(LowerRight, angle);
+		LowerLeft = RotateAround(LowerLeft, angle);
+
 		Vertex[] vertices = [UpperLeft, UpperRight, LowerRight, LowerLeft];
 
 		var bufferDescription = new BufferDesc
@@ -165,5 +180,16 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 		{
 			FreeSemanticNames();
 		}
+	}
+
+	private Vertex RotateAround(Vertex point, float angle)
+	{
+		var cosTheta = MathF.Cos(angle);
+		var sinTheta = MathF.Sin(angle);
+
+		var x = point.X * cosTheta - point.Y * sinTheta;
+		var y = point.X * sinTheta + point.Y * cosTheta;
+
+		return new Vertex(x, y, point.R, point.G, point.B);
 	}
 }
