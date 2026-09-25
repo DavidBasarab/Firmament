@@ -9,6 +9,16 @@ namespace Firmament.Asteroids2D.Learning;
 
 public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposable
 {
+	private const float TurnInSeconds = 2.0f;
+
+	private static Vertex LowerLeft => new(-0.5f, -0.5f, 1f, 1f, 1f);
+
+	private static Vertex LowerRight => new(0.5f, -0.5f, 0f, 0f, 1f);
+
+	private static Vertex UpperLeft => new(-0.5f, 0.5f, 1f, 0f, 0f);
+
+	private static Vertex UpperRight => new(0.5f, 0.5f, 0f, 1f, 0f);
+
 	private readonly List<nint> unmanagedSemanticNames = [];
 	private ComPtr<ID3D11Buffer> indexBuffer;
 
@@ -82,13 +92,7 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 
 	private void CreateVertexBuffer()
 	{
-		Vertex[] vertices =
-		[
-			new(-0.5f, 0.5f, 0f, 0f, 0f),
-			new(0.5f, 0.5f, 1f, 1f, 1f),
-			new(0.5f, -0.5f, 0f, 0f, 0f),
-			new(-0.5f, -0.5f, 1f, 1f, 1f),
-		];
+		Vertex[] vertices = [UpperLeft, UpperRight, LowerRight, LowerLeft];
 
 		var bufferDescription = new BufferDesc
 		{

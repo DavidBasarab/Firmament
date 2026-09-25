@@ -16,4 +16,9 @@ public struct Vertex(float x, float y, float r, float g, float b)
 	public float G = g;
 
 	public float B = b;
+
+	public Vertex Copy()
+	{
+		return new Vertex(X, Y, R, G, B);
+	}
 }
