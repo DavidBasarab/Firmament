@@ -9,17 +9,18 @@ namespace Firmament.Asteroids2D.Learning;
 
 public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposable
 {
-	private const float TurnInSeconds = 2.0f;
+	private const float TurnInSeconds = 12.0f;
 
-	private static Vertex LowerLeft { get; set; } = new(-0.5f, -0.5f, 1f, 1f, 1f);
+	private static Vertex LowerLeft { get; } = new(-0.5f, -0.5f, 1f, 1f, 1f);
 
-	private static Vertex LowerRight { get; set; } = new(0.5f, -0.5f, 0f, 0f, 1f);
+	private static Vertex LowerRight { get; } = new(0.5f, -0.5f, 0f, 0f, 1f);
 
-	private static Vertex UpperLeft { get; set; } = new(-0.5f, 0.5f, 1f, 0f, 0f);
+	private static Vertex UpperLeft { get; } = new(-0.5f, 0.5f, 1f, 0f, 0f);
 
-	private static Vertex UpperRight { get; set; } = new(0.5f, 0.5f, 0f, 1f, 0f);
+	private static Vertex UpperRight { get; } = new(0.5f, 0.5f, 0f, 1f, 0f);
 
 	private readonly List<nint> unmanagedSemanticNames = [];
+	private float elapsedSecondsInTurn;
 	private ComPtr<ID3D11Buffer> indexBuffer;
 
 	private Shader shader;
@@ -93,22 +94,19 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 		}
 	}
 
-	private float progress = 1.0f;
-	private float startAngle;
-	private float targetAngle;
-
 	private void CreateVertexBuffer(double delta)
 	{
-		var progress = Math.Min(1.0, this.progress + delta / TurnInSeconds);
+		elapsedSecondsInTurn = (elapsedSecondsInTurn + (float)delta) % TurnInSeconds;
 
-		var angle = startAngle + (targetAngle - startAngle) * (float)progress;
+		var angle = MathF.Tau * (elapsedSecondsInTurn / TurnInSeconds);
 
-		UpperLeft = RotateAround(UpperLeft, angle);
-		UpperRight = RotateAround(UpperRight, angle);
-		LowerRight = RotateAround(LowerRight, angle);
-		LowerLeft = RotateAround(LowerLeft, angle);
-
-		Vertex[] vertices = [UpperLeft, UpperRight, LowerRight, LowerLeft];
+		Vertex[] vertices =
+		[
+			RotateAround(UpperLeft, angle),
+			RotateAround(UpperRight, angle),
+			RotateAround(LowerRight, angle),
+			RotateAround(LowerLeft, angle),
+		];
 
 		var bufferDescription = new BufferDesc
 		{
@@ -116,6 +114,8 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 			Usage = Usage.Immutable,
 			BindFlags = (uint)BindFlag.VertexBuffer,
 		};
+
+		vertexBuffer.Dispose();
 
 		fixed (Vertex* vertexPtr = vertices)
 		{
