@@ -35,13 +35,14 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 
 	public void Load()
 	{
-		CreateVertexBuffer();
-		CreateIndexBuffer();
 		LoadShader();
 	}
 
 	public void Render(double delta)
 	{
+		CreateVertexBuffer();
+		CreateIndexBuffer();
+
 		BindVertexBuffer();
 		BindIndexBuffer();
 		shader.Bind();
