@@ -10,6 +10,7 @@ namespace Firmament.Asteroids2D.Learning;
 public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposable
 {
 	private readonly List<nint> unmanagedSemanticNames = [];
+	private ComPtr<ID3D11Buffer> indexBuffer;
 
 	private Shader shader;
 
@@ -18,21 +19,24 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 	public void Dispose()
 	{
 		vertexBuffer.Dispose();
+		indexBuffer.Dispose();
 		shader.Dispose();
 	}
 
 	public void Load()
 	{
 		CreateVertexBuffer();
+		CreateIndexBuffer();
 		LoadShader();
 	}
 
 	public void Render(double delta)
 	{
 		BindVertexBuffer();
+		BindIndexBuffer();
 		shader.Bind();
 
-		DrawTriangle();
+		DrawQuad();
 	}
 
 	private byte* AllocatedSemanticName(string semanticName)
@@ -44,6 +48,11 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 		return (byte*)pointer;
 	}
 
+	private void BindIndexBuffer()
+	{
+		DeviceContext.IASetIndexBuffer(indexBuffer, Format.FormatR16Uint, 0);
+	}
+
 	private void BindVertexBuffer()
 	{
 		var stride = (uint)sizeof(Vertex);
@@ -52,9 +61,34 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 		DeviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, ref stride, ref offset);
 	}
 
+	private void CreateIndexBuffer()
+	{
+		ushort[] indices = [0, 1, 2, 0, 2, 3];
+
+		var bufferDescription = new BufferDesc
+		{
+			ByteWidth = (uint)(sizeof(ushort) * indices.Length),
+			Usage = Usage.Immutable,
+			BindFlags = (uint)BindFlag.IndexBuffer,
+		};
+
+		fixed (ushort* indexPointer = indices)
+		{
+			var initialData = new SubresourceData { PSysMem = indexPointer };
+
+			SilkMarshal.ThrowHResult(Window.Device.CreateBuffer(in bufferDescription, in initialData, ref indexBuffer));
+		}
+	}
+
 	private void CreateVertexBuffer()
 	{
-		Vertex[] vertices = [new(0.0f, 0.5f, 1f, 0f, 0f), new(0.5f, -0.5f, 0f, 1f, 0f), new(-0.5f, -0.5f, 0f, 0f, 1f)];
+		Vertex[] vertices =
+		[
+			new(-0.5f, 0.5f, 0f, 0f, 0f),
+			new(0.5f, 0.5f, 1f, 1f, 1f),
+			new(0.5f, -0.5f, 0f, 0f, 0f),
+			new(-0.5f, -0.5f, 1f, 1f, 1f),
+		];
 
 		var bufferDescription = new BufferDesc
 		{
@@ -98,10 +132,10 @@ public unsafe class QuadDrawer(LearningGame game) : GameAction(game), IDisposabl
 		];
 	}
 
-	private void DrawTriangle()
+	private void DrawQuad()
 	{
 		DeviceContext.IASetPrimitiveTopology(D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-		DeviceContext.Draw(3, 0);
+		DeviceContext.DrawIndexed(6, 0, 0);
 	}
 
 	private void FreeSemanticNames()
