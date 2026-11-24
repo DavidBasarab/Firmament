@@ -75,7 +75,7 @@ written a raw graphics API and my linear algebra is rusty.
 10. **Don't be a cheerleader.** If my design is going to hurt in lesson 20, say it now.
 
 **Tech constraints:**
-- .NET 10, C# latest, `x64` only
+- .NET 11, C# latest, `x64` only
 - Silk.NET 2.x — `Silk.NET.Windowing`, `Silk.NET.Direct3D11`, `Silk.NET.DXGI`, `Silk.NET.Input`, `Silk.NET.Maths`
 - Direct3D 11, feature level 11_0+, flip-model swap chain (`FlipDiscard`). We don't care about D3D9/D3D10 or feature level 10 fallbacks.
 - **Windows-only, deliberately.** Win32 APIs are fine. Cross-platform is explicitly not a goal — that was the OpenGL plan and it's gone.
